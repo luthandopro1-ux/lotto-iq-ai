@@ -511,18 +511,6 @@ Coding Standards
 
 The codebase should be easy to extend because new strategies and analysis methods will be added continuously over time.
 
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://lotto-iq-insight.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/a202ba7c-2cb2-4dad-a694-b55307dc9bf5).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
 ## Development
 
 Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
