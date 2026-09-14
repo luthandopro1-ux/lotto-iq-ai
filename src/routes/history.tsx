@@ -60,8 +60,8 @@ function HistoryPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Prediction ledger</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every prediction is written once, locked against its draw ID, and never rewritten.
-          After the result is verified the actual numbers and match statistics are appended.
+          Every prediction is written once, locked against its draw ID, and never rewritten. After
+          the result is verified the actual numbers and match statistics are appended.
         </p>
       </div>
 
@@ -144,7 +144,9 @@ function HistoryPage() {
                   <td className="py-2 pr-3 text-xs">
                     {r.actual ? r.actual.numbers.map(pad).join(" ") : "pending"}
                   </td>
-                  <td className="py-2 pr-3 text-right">{r.status === "graded" ? r.matched_count : "—"}</td>
+                  <td className="py-2 pr-3 text-right">
+                    {r.status === "graded" ? r.matched_count : "—"}
+                  </td>
                   <td className="py-2 text-right">
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${

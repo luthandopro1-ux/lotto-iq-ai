@@ -25,8 +25,7 @@ export async function gatewayJson(
     }),
   });
 
-  if (res.status === 429)
-    throw new Error("AI rate limit reached. Please try again in a moment.");
+  if (res.status === 429) throw new Error("AI rate limit reached. Please try again in a moment.");
   if (res.status === 402)
     throw new Error("AI credits exhausted. Add credits to keep using AI features.");
   if (!res.ok) throw new Error(`AI request failed (${res.status}): ${await res.text()}`);

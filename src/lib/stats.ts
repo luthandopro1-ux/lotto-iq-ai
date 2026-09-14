@@ -183,7 +183,9 @@ export function computeStats(history: Draw[], options: StatOptions = {}): StatLa
   const pairCount = new Map<string, number>();
   const tripletCount = new Map<string, number>();
   recent.forEach((d) => {
-    const nums = drawNumbers(d).slice().sort((a, b) => a - b);
+    const nums = drawNumbers(d)
+      .slice()
+      .sort((a, b) => a - b);
     for (let i = 0; i < nums.length; i++) {
       for (let j = i + 1; j < nums.length; j++) {
         const k = `${nums[i]}-${nums[j]}`;

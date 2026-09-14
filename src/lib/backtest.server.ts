@@ -8,6 +8,7 @@ import {
   type PickedNumber,
 } from "@/lib/predict";
 import { drawNumbers, type Draw, type SessionKey, type Strategy } from "@/lib/uk49";
+import type { Db } from "@/lib/db.server";
 
 /**
  * BACKTESTING ENGINE — Model A–E comparison.
@@ -32,10 +33,18 @@ import { drawNumbers, type Draw, type SessionKey, type Strategy } from "@/lib/uk
 
 export const MODEL_DEFS = [
   { key: "A", label: "Formula only", description: "Pure rule-engine strategy agreement." },
-  { key: "B", label: "Statistical only", description: "Frequency, EMA, gap, Bayes, Markov, Monte Carlo." },
+  {
+    key: "B",
+    label: "Statistical only",
+    description: "Frequency, EMA, gap, Bayes, Markov, Monte Carlo.",
+  },
   { key: "C", label: "Balanced blend (70/30)", description: "70% formula, 30% statistical." },
   { key: "D", label: "Even blend (50/50)", description: "50% formula, 50% statistical." },
-  { key: "E", label: "Learning-adjusted", description: "Formula re-weighted by recent hit/miss accuracy." },
+  {
+    key: "E",
+    label: "Learning-adjusted",
+    description: "Formula re-weighted by recent hit/miss accuracy.",
+  },
 ] as const;
 
 export type ModelKey = (typeof MODEL_DEFS)[number]["key"];
@@ -145,7 +154,10 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
 
   const targets = chronological.filter((d) => d.draw_date >= dateFrom && d.draw_date <= dateTo);
 
-  const totals: Record<ModelKey, { matches: number; best: number; hitDraws: number; pairs: number }> = {
+  const totals: Record<
+    ModelKey,
+    { matches: number; best: number; hitDraws: number; pairs: number }
+  > = {
     A: { matches: 0, best: 0, hitDraws: 0, pairs: 0 },
     B: { matches: 0, best: 0, hitDraws: 0, pairs: 0 },
     C: { matches: 0, best: 0, hitDraws: 0, pairs: 0 },
@@ -157,13 +169,18 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
 
   // Rolling walk-forward learning state for Model E — mirrors exactly what
   // the production daily engine accumulates from graded predictions.
-  const gradedLog: { target_date: string; target_session: SessionKey; grading: ReturnType<typeof gradePrediction> }[] = [];
+  const gradedLog: {
+    target_date: string;
+    target_session: SessionKey;
+    grading: ReturnType<typeof gradePrediction>;
+  }[] = [];
 
   for (const target of targets) {
     const before = chronological.filter(
       (d) =>
         d.draw_date < target.draw_date ||
-        (d.draw_date === target.draw_date && sessionIndex(d.session) < sessionIndex(target.session)),
+        (d.draw_date === target.draw_date &&
+          sessionIndex(d.session) < sessionIndex(target.session)),
     );
     if (before.length < 15 || strategies.length === 0) continue;
 
@@ -194,8 +211,7 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
       { targetDate: target.draw_date, targetSession: target.session, history: before },
       { learning },
     );
-    const topE =
-      predictionE.pool.length >= 6 ? formulaTop(predictionE.pool).top6 : topA;
+    const topE = predictionE.pool.length >= 6 ? formulaTop(predictionE.pool).top6 : topA;
 
     const hits: Record<ModelKey, number> = {
       A: scoreHits(topA, actual),
@@ -220,7 +236,11 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
     // Feed Model E's own grading back into the rolling learning log so
     // the next iteration adapts exactly like production does.
     const gradingE = gradePrediction(predictionE, target);
-    gradedLog.unshift({ target_date: target.draw_date, target_session: target.session, grading: gradingE });
+    gradedLog.unshift({
+      target_date: target.draw_date,
+      target_session: target.session,
+      grading: gradingE,
+    });
     if (gradedLog.length > 12) gradedLog.length = 12;
   }
 
@@ -257,7 +277,7 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
 
 /** Runs the comparison and stores it as one row in `backtests`. */
 export async function runAndSaveBacktest(
-  db: { from: (t: string) => any },
+  db: Db,
   options: RunBacktestOptions,
 ): Promise<BacktestRow> {
   const results = evaluateBacktest(options);
@@ -278,35 +298,29 @@ export async function runAndSaveBacktest(
     date_from: String(data.date_from),
     date_to: String(data.date_to),
     strategy_ids: (data.strategy_ids ?? []) as string[],
-    results: data.results as BacktestResults,
+    results: data.results as unknown as BacktestResults,
     created_at: String(data.created_at),
   };
 }
 
-export async function listSavedBacktests(
-  db: { from: (t: string) => any },
-  limit = 20,
-): Promise<BacktestRow[]> {
+export async function listSavedBacktests(db: Db, limit = 20): Promise<BacktestRow[]> {
   const { data } = await db
     .from("backtests")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);
-  return ((data ?? []) as any[]).map((row) => ({
+  return (data ?? []).map((row) => ({
     id: String(row.id),
     label: (row.label as string | null) ?? null,
     date_from: String(row.date_from),
     date_to: String(row.date_to),
     strategy_ids: (row.strategy_ids ?? []) as string[],
-    results: row.results as BacktestResults,
+    results: row.results as unknown as BacktestResults,
     created_at: String(row.created_at),
   }));
 }
 
-export async function getSavedBacktest(
-  db: { from: (t: string) => any },
-  id: string,
-): Promise<BacktestRow | null> {
+export async function getSavedBacktest(db: Db, id: string): Promise<BacktestRow | null> {
   const { data, error } = await db.from("backtests").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   return {
@@ -315,7 +329,7 @@ export async function getSavedBacktest(
     date_from: String(data.date_from),
     date_to: String(data.date_to),
     strategy_ids: (data.strategy_ids ?? []) as string[],
-    results: data.results as BacktestResults,
+    results: data.results as unknown as BacktestResults,
     created_at: String(data.created_at),
   };
 }

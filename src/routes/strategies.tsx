@@ -50,10 +50,7 @@ function StrategiesPage() {
   const { data: strategies = [] } = useQuery({
     queryKey: ["strategies"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("strategies")
-        .select("*")
-        .order("created_at");
+      const { data, error } = await supabase.from("strategies").select("*").order("created_at");
       if (error) throw error;
       return data as Strategy[];
     },
@@ -81,7 +78,13 @@ function StrategiesPage() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: { enabled?: boolean; weight?: number } }) => {
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: { enabled?: boolean; weight?: number };
+    }) => {
       await updateStrategy({ data: { id, patch } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["strategies"] }),
@@ -96,13 +99,12 @@ function StrategiesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   return (
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Strategy library</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Each strategy runs independently through the rule engine. New rule types can be
-        registered without touching existing strategies.
+        Each strategy runs independently through the rule engine. New rule types can be registered
+        without touching existing strategies.
       </p>
 
       <div className="grid gap-6 lg:grid-cols-3">

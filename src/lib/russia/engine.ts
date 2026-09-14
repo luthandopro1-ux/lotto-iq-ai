@@ -1,4 +1,10 @@
-import type { LotteryDraw, LotteryGame, ComponentScore, NumberScore, EnsembleWeights } from "./types";
+import type {
+  LotteryDraw,
+  LotteryGame,
+  ComponentScore,
+  NumberScore,
+  EnsembleWeights,
+} from "./types";
 import { DEFAULT_WEIGHTS } from "./types";
 
 /**
@@ -18,8 +24,10 @@ function frequencyAnalysis(history: LotteryDraw[], game: LotteryGame) {
   const recentWindow = history.slice(-30);
   const counts = new Map<number, number>();
   const recentCounts = new Map<number, number>();
-  for (const d of history) for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
-  for (const d of recentWindow) for (const n of d.winning_numbers) recentCounts.set(n, (recentCounts.get(n) ?? 0) + 1);
+  for (const d of history)
+    for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
+  for (const d of recentWindow)
+    for (const n of d.winning_numbers) recentCounts.set(n, (recentCounts.get(n) ?? 0) + 1);
 
   // EMA-weighted frequency — recent draws count more, alpha tuned for a
   // ~15-draw half-life.
@@ -45,7 +53,9 @@ function frequencyAnalysis(history: LotteryDraw[], game: LotteryGame) {
       const r = recentCounts.get(n) ?? 0;
       const weighted = ema.get(n) ?? 0;
       // Blend: 40% historical share, 30% recent-window share, 30% EMA.
-      const value = clamp01(0.4 * (c / maxCount) + 0.3 * (r / Math.min(30, total || 1)) + 0.3 * weighted);
+      const value = clamp01(
+        0.4 * (c / maxCount) + 0.3 * (r / Math.min(30, total || 1)) + 0.3 * weighted,
+      );
       return {
         value,
         detail: `${c}/${total} historical, ${r}/${Math.min(30, total)} recent`,
@@ -58,7 +68,9 @@ function momentumAnalysis(history: LotteryDraw[]) {
   const recent = history.slice(-10);
   const prior = history.slice(-30, -10);
   const rate = (window: LotteryDraw[], n: number) =>
-    window.length === 0 ? 0 : window.filter((d) => d.winning_numbers.includes(n)).length / window.length;
+    window.length === 0
+      ? 0
+      : window.filter((d) => d.winning_numbers.includes(n)).length / window.length;
   return {
     score: (n: number): ComponentScore => {
       const recentRate = rate(recent, n);
@@ -132,7 +144,8 @@ function zScoreAnalysis(history: LotteryDraw[], game: LotteryGame) {
   const variance = Math.max(0.0001, total * p * (1 - p));
   const sd = Math.sqrt(variance);
   const counts = new Map<number, number>();
-  for (const d of history) for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
+  for (const d of history)
+    for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
 
   return {
     score: (n: number): ComponentScore => {
@@ -140,7 +153,10 @@ function zScoreAnalysis(history: LotteryDraw[], game: LotteryGame) {
       const z = (observed - expected) / sd;
       // Map z in roughly [-2, 2] to [0, 1].
       const value = clamp01(0.5 + z / 4);
-      return { value, detail: `z=${z.toFixed(2)} (${observed} seen vs ${expected.toFixed(1)} expected)` };
+      return {
+        value,
+        detail: `z=${z.toFixed(2)} (${observed} seen vs ${expected.toFixed(1)} expected)`,
+      };
     },
   };
 }
@@ -155,7 +171,8 @@ function bayesianAnalysis(history: LotteryDraw[], game: LotteryGame) {
   const alpha0 = baseline * priorStrength;
   const beta0 = (1 - baseline) * priorStrength;
   const counts = new Map<number, number>();
-  for (const d of history) for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
+  for (const d of history)
+    for (const n of d.winning_numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
 
   return {
     score: (n: number): ComponentScore => {
@@ -164,7 +181,10 @@ function bayesianAnalysis(history: LotteryDraw[], game: LotteryGame) {
       const posterior = (hits + alpha0) / (hits + alpha0 + misses + beta0);
       // Normalise against the baseline so "at baseline" sits at 0.5.
       const value = clamp01(0.5 + (posterior - baseline) / (baseline * 2 || 1));
-      return { value, detail: `posterior p=${posterior.toFixed(3)} vs baseline ${baseline.toFixed(3)}` };
+      return {
+        value,
+        detail: `posterior p=${posterior.toFixed(3)} vs baseline ${baseline.toFixed(3)}`,
+      };
     },
   };
 }
@@ -297,7 +317,10 @@ function delayedHitAnalysis(history: LotteryDraw[]) {
       // Probability mass at exactly currentGap, plus a little credit for
       // the neighbouring delay values (+/-1 draw), as a fraction of this
       // number's own recurrence history.
-      const mass = (delays.get(currentGap) ?? 0) + 0.5 * (delays.get(currentGap - 1) ?? 0) + 0.5 * (delays.get(currentGap + 1) ?? 0);
+      const mass =
+        (delays.get(currentGap) ?? 0) +
+        0.5 * (delays.get(currentGap - 1) ?? 0) +
+        0.5 * (delays.get(currentGap + 1) ?? 0);
       const value = clamp01(mass / Math.max(1, totalOccurrences));
       const commonDelay = Array.from(delays.entries()).sort((a, b) => b[1] - a[1])[0];
       return {

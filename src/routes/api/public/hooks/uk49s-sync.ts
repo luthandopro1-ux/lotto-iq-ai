@@ -16,7 +16,8 @@ export const Route = createFileRoute("/api/public/hooks/uk49s-sync")({
         // SYNC_WEBHOOK_SECRET is configured. Set it before relying on
         // this for anything beyond "someone re-ran a harmless sync".
         const dedicated = process.env["SYNC_WEBHOOK_SECRET"];
-        const expected = dedicated || process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_ANON_KEY"];
+        const expected =
+          dedicated || process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_ANON_KEY"];
         const provided =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??

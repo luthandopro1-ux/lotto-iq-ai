@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { adminGuard } from "@/lib/admin-guard";
 
+interface GradedPredictionRow {
+  target_draw_number: number;
+  lottery_prediction_results: { total_hits: number; banker_hits: number } | null;
+}
+
 const GameCodeInput = z.object({ gameCode: z.enum(["ru_5_50", "ru_6_45", "ru_7_49"]) });
 
 export const listRussiaGames = createServerFn({ method: "GET" }).handler(async () => {
@@ -56,7 +61,10 @@ export const getRussiaDashboard = createServerFn({ method: "GET" })
 
     const scores = history.length > 0 ? scoreAllNumbers(history, game) : [];
     const hot = scores.slice(0, 10).map((s) => ({ n: s.n, score: s.composite }));
-    const cold = [...scores].reverse().slice(0, 10).map((s) => ({ n: s.n, score: s.composite }));
+    const cold = [...scores]
+      .reverse()
+      .slice(0, 10)
+      .map((s) => ({ n: s.n, score: s.composite }));
 
     // Recent prediction performance summary.
     const { data: gradedRows } = await db
@@ -67,10 +75,20 @@ export const getRussiaDashboard = createServerFn({ method: "GET" })
       .order("target_draw_number", { ascending: false })
       .limit(20);
 
-    const graded = (gradedRows ?? []).filter((r: any) => r.lottery_prediction_results);
-    const totalHits = graded.reduce((a: number, r: any) => a + r.lottery_prediction_results.total_hits, 0);
-    const totalBankerHits = graded.reduce((a: number, r: any) => a + r.lottery_prediction_results.banker_hits, 0);
-    const drawsWithBankerHit = graded.filter((r: any) => r.lottery_prediction_results.banker_hits > 0).length;
+    const graded = ((gradedRows ?? []) as GradedPredictionRow[]).filter(
+      (r) => r.lottery_prediction_results,
+    );
+    const totalHits = graded.reduce(
+      (a, r) => a + (r.lottery_prediction_results?.total_hits ?? 0),
+      0,
+    );
+    const totalBankerHits = graded.reduce(
+      (a, r) => a + (r.lottery_prediction_results?.banker_hits ?? 0),
+      0,
+    );
+    const drawsWithBankerHit = graded.filter(
+      (r) => (r.lottery_prediction_results?.banker_hits ?? 0) > 0,
+    ).length;
 
     return {
       game,
@@ -82,10 +100,10 @@ export const getRussiaDashboard = createServerFn({ method: "GET" })
         avgHits: graded.length ? totalHits / graded.length : 0,
         avgBankerHits: graded.length ? totalBankerHits / graded.length : 0,
         bankerHitRate: graded.length ? (drawsWithBankerHit / graded.length) * 100 : 0,
-        recent: graded.slice(0, 10).map((r: any) => ({
+        recent: graded.slice(0, 10).map((r) => ({
           targetDrawNumber: r.target_draw_number,
-          totalHits: r.lottery_prediction_results.total_hits,
-          bankerHits: r.lottery_prediction_results.banker_hits,
+          totalHits: r.lottery_prediction_results?.total_hits ?? 0,
+          bankerHits: r.lottery_prediction_results?.banker_hits ?? 0,
         })),
       },
     };
@@ -103,7 +121,13 @@ export const runRussiaBacktest = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { serverDb } = await import("@/lib/db.server");
     const { runAndSaveRussiaBacktest } = await import("@/lib/russia/backtest.server");
-    return runAndSaveRussiaBacktest(serverDb(), data.gameCode, data.dateFrom, data.dateTo, data.label);
+    return runAndSaveRussiaBacktest(
+      serverDb(),
+      data.gameCode,
+      data.dateFrom,
+      data.dateTo,
+      data.label,
+    );
   });
 
 export const listRussiaBacktestsFn = createServerFn({ method: "GET" })

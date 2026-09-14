@@ -319,9 +319,11 @@ export function gradePrediction(prediction: Prediction, draw: Draw): Grading {
   }));
 
   const picked = new Map<number, PickedNumber>();
-  for (const p of [...prediction.bankers, ...prediction.pool]) if (!picked.has(p.n)) picked.set(p.n, p);
+  for (const p of [...prediction.bankers, ...prediction.pool])
+    if (!picked.has(p.n)) picked.set(p.n, p);
   for (const r of prediction.rows)
-    for (const p of [r.banker, r.pair[0], r.pair[1], r.bonus]) if (!picked.has(p.n)) picked.set(p.n, p);
+    for (const p of [r.banker, r.pair[0], r.pair[1], r.bonus])
+      if (!picked.has(p.n)) picked.set(p.n, p);
 
   const poolHits: number[] = [];
   const poolMisses: number[] = [];

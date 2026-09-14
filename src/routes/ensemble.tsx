@@ -93,13 +93,18 @@ function EnsemblePage() {
   /* STEP 3 — the additional statistical layer, on the same history. */
   const stats = useMemo(() => {
     const history = draws.filter(
-      (d) => d.draw_date < date || (d.draw_date === date && SESSIONS.indexOf(d.session) < SESSIONS.indexOf(session)),
+      (d) =>
+        d.draw_date < date ||
+        (d.draw_date === date && SESSIONS.indexOf(d.session) < SESSIONS.indexOf(session)),
     );
     return computeStats(history);
   }, [draws, date, session]);
 
   /* STEP 4-9 — comparison, classification, ensemble score. */
-  const ensemble = useMemo(() => buildEnsemble(prediction, stats, weight), [prediction, stats, weight]);
+  const ensemble = useMemo(
+    () => buildEnsemble(prediction, stats, weight),
+    [prediction, stats, weight],
+  );
 
   /* STEP 10 — component scoreboard over already-drawn slots (no future info). */
   const scoreEntries = useMemo(() => {
@@ -115,7 +120,8 @@ function EnsemblePage() {
       const before = ordered.filter(
         (x) =>
           x.draw_date < d.draw_date ||
-          (x.draw_date === d.draw_date && SESSIONS.indexOf(x.session) < SESSIONS.indexOf(d.session)),
+          (x.draw_date === d.draw_date &&
+            SESSIONS.indexOf(x.session) < SESSIONS.indexOf(d.session)),
       );
       const p = buildPrediction(active, {
         targetDate: d.draw_date,
@@ -138,11 +144,10 @@ function EnsemblePage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Ensemble confirmation</h1>
       <p className="mb-6 max-w-3xl text-sm text-muted-foreground">
-        Your existing strategy formula is the core engine and runs untouched. The
-        statistical layer — weighted frequency, EMA momentum, gap, Z-score, Bayesian,
-        pair and triplet association, Markov transitions, Monte Carlo and entropy — is an
-        additional validation layer. It never replaces a formula candidate; it only
-        confirms, supports or flags a conflict.
+        Your existing strategy formula is the core engine and runs untouched. The statistical layer
+        — weighted frequency, EMA momentum, gap, Z-score, Bayesian, pair and triplet association,
+        Markov transitions, Monte Carlo and entropy — is an additional validation layer. It never
+        replaces a formula candidate; it only confirms, supports or flags a conflict.
       </p>
 
       <Panel className="mb-6">
@@ -183,8 +188,8 @@ function EnsemblePage() {
               className="mt-3 w-full accent-primary"
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Starts at 70 / 30. Change it only when the out-of-sample table below shows a
-              better ratio.
+              Starts at 70 / 30. Change it only when the out-of-sample table below shows a better
+              ratio.
             </p>
           </div>
         </div>
@@ -308,8 +313,8 @@ function EnsemblePage() {
           </table>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Formula candidates are always listed first — a statistical-only number never
-          displaces one, it is only shown as a watch item.
+          Formula candidates are always listed first — a statistical-only number never displaces
+          one, it is only shown as a watch item.
         </p>
       </Panel>
 
@@ -441,9 +446,7 @@ function EnsemblePage() {
                       <td className="py-2">{r.formulaHits}/6</td>
                       <td className="py-2">{r.statHits}/6</td>
                       <td className="py-2">{r.combinedHits}/6</td>
-                      <td className="py-2 text-muted-foreground">
-                        {r.actual.map(pad).join(" ")}
-                      </td>
+                      <td className="py-2 text-muted-foreground">{r.actual.map(pad).join(" ")}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -462,18 +465,18 @@ function EnsemblePage() {
               ))}
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">
-              Every row is scored using only draws that happened before it, so no future
-              information leaks into the weighting search. The formula weighting changes
-              only when this table shows sustained improvement.
+              Every row is scored using only draws that happened before it, so no future information
+              leaks into the weighting search. The formula weighting changes only when this table
+              shows sustained improvement.
             </p>
           </>
         )}
       </Panel>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Core engine: your strategy formula. Statistical models: validation and
-        enhancement. Backtesting: performance judge. Actual draws: feedback. The original
-        strategy is never overwritten by a differing statistical ranking.
+        Core engine: your strategy formula. Statistical models: validation and enhancement.
+        Backtesting: performance judge. Actual draws: feedback. The original strategy is never
+        overwritten by a differing statistical ranking.
       </p>
     </AppShell>
   );

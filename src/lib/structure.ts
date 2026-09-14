@@ -188,7 +188,8 @@ export function activeGroups(
   if (!last) return [];
   const recent = sequence.slice(-window);
   const presence: Record<string, number> = Object.fromEntries(keysOf(kind).map((k) => [k, 0]));
-  for (const d of recent) for (const k of structureKeys(kind, d)) presence[k] = (presence[k] ?? 0) + 1;
+  for (const d of recent)
+    for (const k of structureKeys(kind, d)) presence[k] = (presence[k] ?? 0) + 1;
 
   return structureKeys(kind, last)
     .map((key) => {

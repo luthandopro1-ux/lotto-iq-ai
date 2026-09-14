@@ -327,7 +327,10 @@ export function structuralSupport(
   const numbers = Array.from({ length: 49 }, (_, i) => i + 1);
   const empty = Object.fromEntries(numbers.map((n) => [n, 0])) as Record<number, number>;
   const detail: StructuralSupport["detail"] = Object.fromEntries(
-    numbers.map((n) => [n, {} as Record<StructureKind, { group: string; lift: number; sample: number }>]),
+    numbers.map((n) => [
+      n,
+      {} as Record<StructureKind, { group: string; lift: number; sample: number }>,
+    ]),
   );
   if (!last) {
     return {

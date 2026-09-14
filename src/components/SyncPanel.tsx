@@ -36,7 +36,9 @@ export function SyncPanel() {
   const runSync = useMutation({
     mutationFn: () => sync({ data: { trigger: "manual" } }),
     onSuccess: (s) => {
-      toast.success(`Synced ${s.inserted} new draw${s.inserted === 1 ? "" : "s"} (${s.found} checked).`);
+      toast.success(
+        `Synced ${s.inserted} new draw${s.inserted === 1 ? "" : "s"} (${s.found} checked).`,
+      );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -73,7 +75,11 @@ export function SyncPanel() {
               </option>
             ))}
           </select>
-          <Button variant="secondary" onClick={() => runBackfill.mutate()} disabled={runBackfill.isPending}>
+          <Button
+            variant="secondary"
+            onClick={() => runBackfill.mutate()}
+            disabled={runBackfill.isPending}
+          >
             <History className="mr-2 size-4" />
             {runBackfill.isPending ? "Loading…" : "Backfill year"}
           </Button>

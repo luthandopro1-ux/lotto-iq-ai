@@ -90,10 +90,7 @@ function StructurePage() {
     () => (sequence.length > 10 ? structuralSupport(sequence) : null),
     [sequence],
   );
-  const leads = useMemo(
-    () => (sequence.length > 40 ? whatPlayedFirst(sequence) : []),
-    [sequence],
-  );
+  const leads = useMemo(() => (sequence.length > 40 ? whatPlayedFirst(sequence) : []), [sequence]);
   const intel = useMemo(() => {
     const enabled = strategies.filter((s) => s.enabled);
     if (sequence.length < 20 || enabled.length === 0) return null;
@@ -111,8 +108,7 @@ function StructurePage() {
     return Array.from({ length: 49 }, (_, i) => i + 1)
       .map((n) => ({
         n,
-        score:
-          ((support.wheel[n] ?? 0) + (support.family[n] ?? 0) + (support.section[n] ?? 0)) / 3,
+        score: ((support.wheel[n] ?? 0) + (support.family[n] ?? 0) + (support.section[n] ?? 0)) / 3,
         wheel: support.wheel[n] ?? 0,
         family: support.family[n] ?? 0,
         section: support.section[n] ?? 0,
@@ -174,7 +170,8 @@ function StructurePage() {
                       <span className="font-display text-sm font-semibold">{key}</span>
                       {hit && (
                         <span className="text-[10px] font-semibold text-primary">
-                          ACTIVE · {hit.count} hit{hit.count === 1 ? "" : "s"} · {pct(hit.recentRate)}
+                          ACTIVE · {hit.count} hit{hit.count === 1 ? "" : "s"} ·{" "}
+                          {pct(hit.recentRate)}
                         </span>
                       )}
                     </div>

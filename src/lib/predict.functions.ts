@@ -4,7 +4,10 @@ import { SESSIONS } from "@/lib/uk49";
 import { adminGuard } from "@/lib/admin-guard";
 
 const BoardInput = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   sync: z.boolean().optional(),
 });
 
@@ -21,5 +24,8 @@ export const runDailyBoard = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => BoardInput.parse(input ?? {}))
   .handler(async ({ data }) => {
     const { runDailyBoard: run } = await import("@/lib/daily.server");
-    return run({ ...(data.date ? { date: data.date } : {}), ...(data.sync === false ? { sync: false } : {}) });
+    return run({
+      ...(data.date ? { date: data.date } : {}),
+      ...(data.sync === false ? { sync: false } : {}),
+    });
   });

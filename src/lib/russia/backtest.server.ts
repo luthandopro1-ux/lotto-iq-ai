@@ -1,8 +1,7 @@
 import { buildRussiaPrediction, gradeRussiaPrediction } from "./predict";
 import { getGameByCode, getHistory } from "./service.server";
 import type { LotteryDraw, LotteryGame } from "./types";
-
-type Db = { from: (table: string) => any };
+import type { Db } from "@/lib/db.server";
 
 export interface RussiaBacktestMetrics {
   tests: number;
@@ -99,7 +98,8 @@ export async function runAndSaveRussiaBacktest(
 ): Promise<RussiaBacktestRow> {
   const game = await getGameByCode(db, gameCode);
   const history = await getHistory(db, game.id);
-  if (history.length === 0) throw new Error(`No ${game.game_name} draws yet — add some history first.`);
+  if (history.length === 0)
+    throw new Error(`No ${game.game_name} draws yet — add some history first.`);
 
   const results = evaluateRussiaBacktest(game, history, dateFrom, dateTo);
   const { data, error } = await db
@@ -114,7 +114,7 @@ export async function runAndSaveRussiaBacktest(
     .select("*")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Backtest could not be saved.");
-  return data as RussiaBacktestRow;
+  return data as unknown as RussiaBacktestRow;
 }
 
 export async function listRussiaBacktests(db: Db, gameCode: string): Promise<RussiaBacktestRow[]> {
@@ -125,5 +125,5 @@ export async function listRussiaBacktests(db: Db, gameCode: string): Promise<Rus
     .eq("game_id", game.id)
     .order("created_at", { ascending: false })
     .limit(20);
-  return (data ?? []) as RussiaBacktestRow[];
+  return (data ?? []) as unknown as RussiaBacktestRow[];
 }

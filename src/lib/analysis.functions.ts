@@ -46,7 +46,9 @@ export const refreshAnalysisSnapshot = createServerFn({ method: "POST" })
 
 /** Recent snapshot history for a target draw, newest first. */
 export const listAnalysisSnapshots = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => SnapshotInput.extend({ limit: z.number().int().min(1).max(50).optional() }).parse(input))
+  .inputValidator((input: unknown) =>
+    SnapshotInput.extend({ limit: z.number().int().min(1).max(50).optional() }).parse(input),
+  )
   .handler(async ({ data }) => {
     const { serverDb } = await import("@/lib/db.server");
     const db = serverDb();

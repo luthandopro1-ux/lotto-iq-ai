@@ -1,7 +1,7 @@
 import { buildRussiaPrediction, gradeRussiaPrediction } from "./predict";
 import type { LotteryDraw, LotteryGame, RussiaPrediction } from "./types";
-
-type Db = { from: (table: string) => any };
+import type { Db } from "@/lib/db.server";
+import type { Json } from "@/integrations/supabase/types";
 
 export async function getGameByCode(db: Db, code: string): Promise<LotteryGame> {
   const { data, error } = await db.from("lottery_games").select("*").eq("code", code).single();
@@ -40,7 +40,21 @@ export interface GameState {
   } | null;
 }
 
-function rowToPrediction(row: any): RussiaPrediction & { id: string; createdAt: string } {
+interface PredictionRow {
+  id: string;
+  created_at: string;
+  game_id: string;
+  target_draw_number: number;
+  bankers: number[];
+  predicted_numbers: number[];
+  strategy_scores: Json;
+  explanation: Json;
+}
+
+function rowToPrediction(row: PredictionRow): RussiaPrediction & { id: string; createdAt: string } {
+  const strategyScores = row.strategy_scores as unknown as {
+    scores?: RussiaPrediction["scores"];
+  } | null;
   return {
     id: row.id,
     createdAt: row.created_at,
@@ -48,8 +62,8 @@ function rowToPrediction(row: any): RussiaPrediction & { id: string; createdAt: 
     targetDrawNumber: row.target_draw_number,
     bankers: row.bankers,
     predictedNumbers: row.predicted_numbers,
-    scores: (row.strategy_scores?.scores ?? []) as RussiaPrediction["scores"],
-    explanation: (row.explanation ?? {}) as RussiaPrediction["explanation"],
+    scores: strategyScores?.scores ?? [],
+    explanation: (row.explanation as unknown as RussiaPrediction["explanation"]) ?? {},
   };
 }
 
@@ -94,7 +108,9 @@ async function storePrediction(db: Db, prediction: RussiaPrediction) {
     bankers: prediction.bankers,
     predicted_numbers: prediction.predictedNumbers,
     strategy_scores: { scores: prediction.scores } as never,
-    composite_score: Object.fromEntries(prediction.scores.slice(0, 10).map((s) => [s.n, s.composite])) as never,
+    composite_score: Object.fromEntries(
+      prediction.scores.slice(0, 10).map((s) => [s.n, s.composite]),
+    ) as never,
     explanation: prediction.explanation as never,
     status: "pending",
   };
@@ -134,7 +150,9 @@ export async function addDrawAndAdvance(db: Db, input: AddDrawInput): Promise<Ad
   }
   for (const n of numbers) {
     if (n < game.number_range_min || n > game.number_range_max) {
-      throw new Error(`${n} is outside ${game.game_name}'s range (${game.number_range_min}-${game.number_range_max}).`);
+      throw new Error(
+        `${n} is outside ${game.game_name}'s range (${game.number_range_min}-${game.number_range_max}).`,
+      );
     }
   }
 
@@ -193,7 +211,10 @@ export async function addDrawAndAdvance(db: Db, input: AddDrawInput): Promise<Ad
 }
 
 /** Ensures a pending prediction exists for the next draw, without needing a new result first (first run / bootstrap). */
-export async function ensurePendingPrediction(db: Db, gameCode: string): Promise<RussiaPrediction | null> {
+export async function ensurePendingPrediction(
+  db: Db,
+  gameCode: string,
+): Promise<RussiaPrediction | null> {
   const game = await getGameByCode(db, gameCode);
   const { data: pendingRows } = await db
     .from("lottery_predictions")

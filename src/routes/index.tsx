@@ -3,25 +3,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Panel, Ball } from "@/components/AppShell";
-import {
-  SESSION_LABELS,
-  currentSession,
-  drawNumbers,
-  type Draw,
-  type Strategy,
-} from "@/lib/uk49";
+import { SESSION_LABELS, currentSession, drawNumbers, type Draw, type Strategy } from "@/lib/uk49";
 import { runAnalysis } from "@/lib/engine";
 import { Link } from "@tanstack/react-router";
 import { Activity, CalendarDays, Database, Library } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -99,7 +85,6 @@ function Dashboard() {
     },
   ];
 
-
   return (
     <AppShell>
       <div className="glass mb-6 overflow-hidden rounded-3xl p-8">
@@ -107,13 +92,12 @@ function Dashboard() {
           UK49 Strategy Intelligence
         </p>
         <h1 className="mt-3 max-w-2xl text-3xl font-bold sm:text-4xl">
-          Build, run and <span className="gradient-text">stress-test</span> your own
-          UK49 strategies.
+          Build, run and <span className="gradient-text">stress-test</span> your own UK49
+          strategies.
         </h1>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Paste results in any format and the AI importer files them for you. Every
-          active strategy then runs against your history and the outputs are ranked by
-          overlap and weight.
+          Paste results in any format and the AI importer files them for you. Every active strategy
+          then runs against your history and the outputs are ranked by overlap and weight.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
@@ -186,8 +170,18 @@ function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hot}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="number" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="number"
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
                       background: "var(--popover)",

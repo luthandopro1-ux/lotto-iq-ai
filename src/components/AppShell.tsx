@@ -26,9 +26,7 @@ const nav = [
   { to: "/structure", label: "Structure", icon: Compass },
   { to: "/backtest", label: "Backtest", icon: History },
   { to: "/russia", label: "Russia", icon: Globe },
-
 ] as const;
-
 
 function AdminKeyControl() {
   const [open, setOpen] = useState(false);
@@ -47,8 +45,8 @@ function AdminKeyControl() {
       {open && (
         <div className="absolute right-0 top-9 z-50 w-64 rounded-xl border border-border bg-popover p-3 text-xs shadow-lg">
           <p className="mb-2 text-muted-foreground">
-            Only needed if this deployment has <code>ADMIN_API_KEY</code> set. Saved locally in
-            this browser only.
+            Only needed if this deployment has <code>ADMIN_API_KEY</code> set. Saved locally in this
+            browser only.
           </p>
           <input
             type="password"
@@ -133,7 +131,11 @@ export function Panel({
     <section className={`glass rounded-2xl p-5 ${className}`}>
       {(title || action) && (
         <div className="mb-4 flex items-center justify-between gap-3">
-          {title && <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">{title}</h2>}
+          {title && (
+            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              {title}
+            </h2>
+          )}
           {action}
         </div>
       )}
@@ -152,7 +154,11 @@ export function Ball({
   return (
     <span
       className={
-        variant === "primary" ? "ball ball-primary" : variant === "accent" ? "ball ball-accent" : "ball"
+        variant === "primary"
+          ? "ball ball-primary"
+          : variant === "accent"
+            ? "ball ball-accent"
+            : "ball"
       }
     >
       {n}

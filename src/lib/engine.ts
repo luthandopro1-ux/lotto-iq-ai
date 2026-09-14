@@ -59,7 +59,10 @@ register({
   category: "date",
   run: (ctx) =>
     seedNumbers(ctx).map((n) =>
-      out(n * ctx.date.getDate(), `${n} × ${ctx.date.getDate()} (date) = ${n * ctx.date.getDate()}`),
+      out(
+        n * ctx.date.getDate(),
+        `${n} × ${ctx.date.getDate()} (date) = ${n * ctx.date.getDate()}`,
+      ),
     ),
 });
 
@@ -90,7 +93,9 @@ register({
     const base = 50 - day;
     return [
       out(base, `50 − ${day} (date) = ${base}`),
-      ...seedNumbers(ctx).map((n) => out(Math.abs(n - base), `|${n} − ${base}| = ${Math.abs(n - base)}`)),
+      ...seedNumbers(ctx).map((n) =>
+        out(Math.abs(n - base), `|${n} − ${base}| = ${Math.abs(n - base)}`),
+      ),
     ];
   },
 });
@@ -187,7 +192,9 @@ register({
     const prev = seedDraw(ctx);
     if (!prev?.booster) return [];
     const b = prev.booster;
-    return drawNumbers(prev).map((n) => out(Math.abs(n - b), `|${n} − ${b}| (booster) = ${Math.abs(n - b)}`));
+    return drawNumbers(prev).map((n) =>
+      out(Math.abs(n - b), `|${n} − ${b}| (booster) = ${Math.abs(n - b)}`),
+    );
   },
 });
 
@@ -256,7 +263,10 @@ register({
       const total = totals.reduce((a, b) => a + b, 0);
       results.push(out(total, `combined sum ${totals.join(" + ")} = ${total}`));
       results.push(
-        out(Math.round(total / three.length), `average of last ${three.length} sums = ${Math.round(total / three.length)}`),
+        out(
+          Math.round(total / three.length),
+          `average of last ${three.length} sums = ${Math.round(total / three.length)}`,
+        ),
       );
     }
     return results;
@@ -276,13 +286,7 @@ register({
 /* ------------------------------------------------------------------ */
 
 export type BuilderSeed =
-  | "prev1"
-  | "prev2"
-  | "prev3"
-  | "prev3_all"
-  | "date"
-  | "booster"
-  | "sum_prev1";
+  "prev1" | "prev2" | "prev3" | "prev3_all" | "date" | "booster" | "sum_prev1";
 
 export type BuilderOpType =
   | "add"
@@ -400,7 +404,10 @@ function applyOp(item: RuleOutput, step: BuilderOp, ctx: RuleContext): RuleOutpu
       return [make(p, `digit product = ${p}`)];
     }
     case "neighbours":
-      return [make(item.value + 1, `+1 = ${item.value + 1}`), make(item.value - 1, `−1 = ${item.value - 1}`)];
+      return [
+        make(item.value + 1, `+1 = ${item.value + 1}`),
+        make(item.value - 1, `−1 = ${item.value - 1}`),
+      ];
     default:
       return [item];
   }
@@ -483,7 +490,12 @@ export function runAnalysis(
   for (const s of strategies) {
     const rule = registry.get(s.rule_type);
     if (!rule) {
-      perStrategy.push({ strategy: s, numbers: [], traces: {}, error: `Unknown rule "${s.rule_type}"` });
+      perStrategy.push({
+        strategy: s,
+        numbers: [],
+        traces: {},
+        error: `Unknown rule "${s.rule_type}"`,
+      });
       continue;
     }
 

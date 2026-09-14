@@ -56,8 +56,7 @@ export const smartImportDraws = createServerFn({ method: "POST" })
       seen.add(key);
       draws.push({
         ...d,
-        booster:
-          d.booster && d.booster >= 1 && d.booster <= 49 ? d.booster : null,
+        booster: d.booster && d.booster >= 1 && d.booster <= 49 ? d.booster : null,
       });
     }
 

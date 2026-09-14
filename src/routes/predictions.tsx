@@ -80,13 +80,7 @@ function Flag({ hit }: { hit: boolean | null }) {
   );
 }
 
-function Chart({
-  rows,
-  grading,
-}: {
-  rows: PredictionRow[];
-  grading: Grading | null;
-}) {
+function Chart({ rows, grading }: { rows: PredictionRow[]; grading: Grading | null }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[420px] text-sm">
@@ -135,7 +129,13 @@ function Chart({
                   <Names p={r.bonus} />
                 </td>
                 <td className="py-2 text-right text-[11px] text-muted-foreground">
-                  {g ? (g.pairFullHit ? "pair complete" : g.bankerHit ? "banker in" : "") : "pending"}
+                  {g
+                    ? g.pairFullHit
+                      ? "pair complete"
+                      : g.bankerHit
+                        ? "banker in"
+                        : ""
+                    : "pending"}
                 </td>
               </tr>
             );
@@ -181,10 +181,10 @@ function PredictionsPage() {
         <div>
           <h1 className="text-2xl font-bold">Daily prediction chart</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            UK49s runs four draws a day — Brunch → Lunch → Drive Time → Tea Time. Before
-            each one the engine syncs results, runs every active strategy over the full
-            daily sequence and saves a Banker / Pairs / Bonus chart. After the draw each
-            selection is graded and the misses feed the next session.
+            UK49s runs four draws a day — Brunch → Lunch → Drive Time → Tea Time. Before each one
+            the engine syncs results, runs every active strategy over the full daily sequence and
+            saves a Banker / Pairs / Bonus chart. After the draw each selection is graded and the
+            misses feed the next session.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -233,8 +233,8 @@ function PredictionsPage() {
             {data.catchUp.stillMissing.join(" · ")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            The engine will keep retrying these and will not predict past a session whose
-            result is still unverified.
+            The engine will keep retrying these and will not predict past a session whose result is
+            still unverified.
           </p>
         </Panel>
       )}
@@ -308,9 +308,7 @@ function PredictionsPage() {
                       </p>
                       {Array.from(
                         new Map(
-                          rows
-                            .flatMap((r) => [r.banker, r.pair[1], r.bonus])
-                            .map((x) => [x.n, x]),
+                          rows.flatMap((r) => [r.banker, r.pair[1], r.bonus]).map((x) => [x.n, x]),
                         ).values(),
                       )
                         .sort((a, b) => b.score - a.score)
@@ -319,9 +317,7 @@ function PredictionsPage() {
                             <span className="font-mono font-bold">{pad(x.n)}</span>
                             <span className="text-muted-foreground">score {x.score}</span>
                             <span className="text-primary">{x.strategies.join(", ")}</span>
-                            {grading && (
-                              <Flag hit={grading.actual.includes(x.n)} />
-                            )}
+                            {grading && <Flag hit={grading.actual.includes(x.n)} />}
                           </div>
                         ))}
                     </div>
@@ -342,8 +338,8 @@ function PredictionsPage() {
       </div>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Predictions are saved before the draw and never rewritten afterwards. Grading
-        compares the saved selections with the real published result.
+        Predictions are saved before the draw and never rewritten afterwards. Grading compares the
+        saved selections with the real published result.
       </p>
     </AppShell>
   );

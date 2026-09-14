@@ -60,7 +60,9 @@ export function SyncLog() {
               <tr key={r.id} className="border-t border-border/60">
                 <td className="py-1.5">{new Date(r.startedAt).toLocaleString("en-GB")}</td>
                 <td className="py-1.5">{r.mode}</td>
-                <td className={`py-1.5 ${r.status === "ok" ? "text-emerald-400" : "text-destructive"}`}>
+                <td
+                  className={`py-1.5 ${r.status === "ok" ? "text-emerald-400" : "text-destructive"}`}
+                >
                   {r.status}
                   {r.error ? ` — ${r.error.slice(0, 60)}` : ""}
                 </td>

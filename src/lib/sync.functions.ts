@@ -35,9 +35,7 @@ export const predictionHistory = createServerFn({ method: "POST" })
         partial: graded.filter((r) => r.outcome === "PARTIAL").length,
         miss: graded.filter((r) => r.outcome === "MISS").length,
         avgMatched: graded.length
-          ? Number(
-              (graded.reduce((a, r) => a + r.matched_count, 0) / graded.length).toFixed(2),
-            )
+          ? Number((graded.reduce((a, r) => a + r.matched_count, 0) / graded.length).toFixed(2))
           : 0,
       },
     };
@@ -54,9 +52,13 @@ export const syncStatus = createServerFn({ method: "GET" }).handler(async () => 
 
   const [{ data: runs }, { data: latest }, missing] = await Promise.all([
     db.from("ingest_runs").select("*").order("started_at", { ascending: false }).limit(8),
-    db.from("draws").select("draw_date,session,provider,imported_at").order("draw_date", {
-      ascending: false,
-    }).limit(40),
+    db
+      .from("draws")
+      .select("draw_date,session,provider,imported_at")
+      .order("draw_date", {
+        ascending: false,
+      })
+      .limit(40),
     missingSlots(4, now),
   ]);
 

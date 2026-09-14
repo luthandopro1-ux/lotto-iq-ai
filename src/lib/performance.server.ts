@@ -1,8 +1,7 @@
 import { adaptiveLayer } from "@/lib/adaptive";
 import { structuralSequence } from "@/lib/structure";
 import type { Draw, SessionKey, Strategy } from "@/lib/uk49";
-
-type Db = { from: (t: string) => any };
+import type { Db } from "@/lib/db.server";
 
 /**
  * Persist the walk-forward strategy performance so the long-term record
@@ -44,7 +43,6 @@ export async function persistStrategyPerformance(
     windowRow(s, "90d", s.windows.d90, s.windows.d90 * 100),
     windowRow(s, "30d", s.windows.d30, s.windows.d30 * 100),
   ]);
-
 
   const { error } = await db
     .from("strategy_performance")

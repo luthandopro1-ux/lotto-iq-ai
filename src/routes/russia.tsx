@@ -127,12 +127,15 @@ function RussiaPage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">🌍 Lotto IQ — Russia</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Independent AI-ranked prediction engines for Russia 5/50, 6/45 and 7/49 — separate
-        history, scoring and backtesting from the UK49 engine. Statistical Bankers, not
-        guarantees.
+        Independent AI-ranked prediction engines for Russia 5/50, 6/45 and 7/49 — separate history,
+        scoring and backtesting from the UK49 engine. Statistical Bankers, not guarantees.
       </p>
 
-      <Tabs value={gameCode} onValueChange={(v) => setGameCode(v as typeof gameCode)} className="mb-6">
+      <Tabs
+        value={gameCode}
+        onValueChange={(v) => setGameCode(v as typeof gameCode)}
+        className="mb-6"
+      >
         <TabsList>
           {GAMES.map((g) => (
             <TabsTrigger key={g.code} value={g.code}>
@@ -171,7 +174,11 @@ function RussiaPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {state.pendingPrediction.predictedNumbers.map((n) => (
-                    <Ball key={n} n={n} variant={state.pendingPrediction!.bankers.includes(n) ? "banker" : "default"} />
+                    <Ball
+                      key={n}
+                      n={n}
+                      variant={state.pendingPrediction!.bankers.includes(n) ? "banker" : "default"}
+                    />
                   ))}
                 </div>
               </div>
@@ -209,8 +216,8 @@ function RussiaPage() {
         <div className="space-y-6">
           <Panel title="Add a draw result">
             <p className="mb-3 text-xs text-muted-foreground">
-              No automatic feed is connected for Russian draws yet — enter the official result
-              here once it's published. Never guess or simulate a result.
+              No automatic feed is connected for Russian draws yet — enter the official result here
+              once it's published. Never guess or simulate a result.
             </p>
             <div className="space-y-3">
               <div>
@@ -305,15 +312,21 @@ function RussiaPage() {
           ) : (
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-2xl font-bold text-primary">{dashboard.performance.avgHits.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {dashboard.performance.avgHits.toFixed(2)}
+                </p>
                 <p className="text-xs text-muted-foreground">avg hits / draw</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">{dashboard.performance.avgBankerHits.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {dashboard.performance.avgBankerHits.toFixed(2)}
+                </p>
                 <p className="text-xs text-muted-foreground">avg Banker hits</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">{dashboard.performance.bankerHitRate.toFixed(0)}%</p>
+                <p className="text-2xl font-bold text-primary">
+                  {dashboard.performance.bankerHitRate.toFixed(0)}%
+                </p>
                 <p className="text-xs text-muted-foreground">Banker hit rate</p>
               </div>
             </div>
@@ -337,7 +350,9 @@ function RussiaPage() {
           </Button>
         </div>
         {backtests.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No saved backtests yet for Russia {GAMES.find((g) => g.code === gameCode)?.label}.</p>
+          <p className="text-sm text-muted-foreground">
+            No saved backtests yet for Russia {GAMES.find((g) => g.code === gameCode)?.label}.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -358,10 +373,16 @@ function RussiaPage() {
                       {row.date_from} → {row.date_to}
                     </td>
                     <td className="py-2 pr-4 font-mono">{row.results.metrics.tests}</td>
-                    <td className="py-2 pr-4 font-mono text-primary">{row.results.metrics.avgHits.toFixed(2)}</td>
+                    <td className="py-2 pr-4 font-mono text-primary">
+                      {row.results.metrics.avgHits.toFixed(2)}
+                    </td>
                     <td className="py-2 pr-4 font-mono">{row.results.metrics.bestHits}</td>
-                    <td className="py-2 pr-4 font-mono">{row.results.metrics.avgBankerHits.toFixed(2)}</td>
-                    <td className="py-2 font-mono">{row.results.metrics.bankerHitRate.toFixed(0)}%</td>
+                    <td className="py-2 pr-4 font-mono">
+                      {row.results.metrics.avgBankerHits.toFixed(2)}
+                    </td>
+                    <td className="py-2 font-mono">
+                      {row.results.metrics.bankerHitRate.toFixed(0)}%
+                    </td>
                   </tr>
                 ))}
               </tbody>

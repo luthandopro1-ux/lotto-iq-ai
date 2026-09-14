@@ -49,7 +49,6 @@ export interface StrategyAdaptive {
   trend: Trend;
 }
 
-
 export interface AdaptiveNumber {
   n: number;
   score: number;
@@ -74,7 +73,12 @@ export interface AdaptiveReport {
   confidenceLabel: "high" | "medium" | "low";
   /** Result evaluation of the last completed draw in the sequence. */
   evaluation: StrategyEvaluation[];
-  evaluatedDraw: { date: string; session: SessionKey; sessionLabel: string; numbers: number[] } | null;
+  evaluatedDraw: {
+    date: string;
+    session: SessionKey;
+    sessionLabel: string;
+    numbers: number[];
+  } | null;
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -109,7 +113,6 @@ interface Acc {
 const DAY = 86_400_000;
 const daysBefore = (target: string, date: string) =>
   Math.max(0, (Date.parse(`${target}T12:00:00Z`) - Date.parse(`${date}T12:00:00Z`)) / DAY);
-
 
 function numbersByStrategy(slot: Slot) {
   const map = new Map<string, { name: string; numbers: number[]; agreement: number[] }>();
@@ -278,7 +281,6 @@ export function adaptiveLayer(
       score: Number(score.toFixed(1)),
       trend,
     };
-
   });
   adaptive.sort((x, y) => y.score - x.score);
 
@@ -296,7 +298,12 @@ export function adaptiveLayer(
         score += h.weight * (m ? 0.5 + m.score / 100 : 1);
         if (!names.includes(h.strategy)) names.push(h.strategy);
       }
-      numbers.push({ n: r.number, score: Number(score.toFixed(2)), strategies: names, agreement: r.agreement });
+      numbers.push({
+        n: r.number,
+        score: Number(score.toFixed(2)),
+        strategies: names,
+        agreement: r.agreement,
+      });
     }
     numbers.sort((a, b) => b.score - a.score || b.agreement - a.agreement);
   }

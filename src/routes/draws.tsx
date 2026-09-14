@@ -64,8 +64,10 @@ function DrawsPage() {
     onSuccess: (res) => {
       setPreview(res.draws);
       setNotes(res.notes);
-      if (res.draws.length === 0) toast.error("The AI could not find any valid draws in that text.");
-      else toast.success(`${res.draws.length} draw${res.draws.length === 1 ? "" : "s"} recognised.`);
+      if (res.draws.length === 0)
+        toast.error("The AI could not find any valid draws in that text.");
+      else
+        toast.success(`${res.draws.length} draw${res.draws.length === 1 ? "" : "s"} recognised.`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -142,8 +144,8 @@ function DrawsPage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Historical database</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        The AI importer reads any format — CSV, pasted tables, messages, PDF text — and
-        files every draw into Brunch, Lunch, Drive Time and Tea Time.
+        The AI importer reads any format — CSV, pasted tables, messages, PDF text — and files every
+        draw into Brunch, Lunch, Drive Time and Tea Time.
       </p>
 
       <SyncPanel />
@@ -158,7 +160,10 @@ function DrawsPage() {
             className="resize-y font-mono text-xs"
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button onClick={() => parse.mutate()} disabled={raw.trim().length < 3 || parse.isPending}>
+            <Button
+              onClick={() => parse.mutate()}
+              disabled={raw.trim().length < 3 || parse.isPending}
+            >
               <Wand2 className="mr-2 size-4" />
               {parse.isPending ? "Reading…" : "Read with AI"}
             </Button>

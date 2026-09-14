@@ -88,12 +88,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Lotto IQ AI — UK49 Strategy Analysis Dashboard" },
       {
         property: "og:description",
-        content: "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis.",
+        content:
+          "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Lotto IQ AI — UK49 Strategy Analysis Dashboard" },
-      { name: "twitter:description", content: "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis." },
+      {
+        name: "twitter:description",
+        content:
+          "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis.",
+      },
       { property: "og:image", content: "/og-image.png" },
       { name: "twitter:image", content: "/og-image.png" },
     ],
@@ -143,4 +148,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

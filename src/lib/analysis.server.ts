@@ -1,5 +1,6 @@
 import { runAnalysis, rankPairs } from "@/lib/engine";
 import type { Draw, SessionKey, Strategy } from "@/lib/uk49";
+import type { Db } from "@/lib/db.server";
 
 /**
  * Analysis snapshot engine.
@@ -63,7 +64,7 @@ export interface AnalysisSnapshotRow {
  * at the time so no future information leaks in.
  */
 export async function computeAndStoreAnalysisSnapshot(
-  db: { from: (t: string) => any },
+  db: Db,
   input: AnalysisSnapshotInput,
 ): Promise<AnalysisSnapshotRow | null> {
   const { targetDate, targetSession, strategies, history, trigger = "manual" } = input;
@@ -120,9 +121,9 @@ export async function computeAndStoreAnalysisSnapshot(
     id: String(data.id),
     target_date: String(data.target_date),
     target_session: String(data.target_session),
-    top_numbers: (data.top_numbers ?? []) as StoredTopNumber[],
-    top_pairs: (data.top_pairs ?? []) as StoredTopPair[],
-    breakdown: (data.breakdown ?? []) as StoredBreakdownEntry[],
+    top_numbers: (data.top_numbers ?? []) as unknown as StoredTopNumber[],
+    top_pairs: (data.top_pairs ?? []) as unknown as StoredTopPair[],
+    breakdown: (data.breakdown ?? []) as unknown as StoredBreakdownEntry[],
     strategy_count: Number(data.strategy_count ?? 0),
     trigger: String(data.trigger ?? "manual"),
     created_at: String(data.created_at),
@@ -131,7 +132,7 @@ export async function computeAndStoreAnalysisSnapshot(
 
 /** Most recent stored snapshot for a target draw, or null if none exists yet. */
 export async function latestAnalysisSnapshot(
-  db: { from: (t: string) => any },
+  db: Db,
   targetDate: string,
   targetSession: SessionKey,
 ): Promise<AnalysisSnapshotRow | null> {
@@ -148,9 +149,9 @@ export async function latestAnalysisSnapshot(
     id: String(data.id),
     target_date: String(data.target_date),
     target_session: String(data.target_session),
-    top_numbers: (data.top_numbers ?? []) as StoredTopNumber[],
-    top_pairs: (data.top_pairs ?? []) as StoredTopPair[],
-    breakdown: (data.breakdown ?? []) as StoredBreakdownEntry[],
+    top_numbers: (data.top_numbers ?? []) as unknown as StoredTopNumber[],
+    top_pairs: (data.top_pairs ?? []) as unknown as StoredTopPair[],
+    breakdown: (data.breakdown ?? []) as unknown as StoredBreakdownEntry[],
     strategy_count: Number(data.strategy_count ?? 0),
     trigger: String(data.trigger ?? "manual"),
     created_at: String(data.created_at),
@@ -163,7 +164,7 @@ export async function latestAnalysisSnapshot(
  * database itself, then computes and stores the snapshot.
  */
 export async function runAndStoreAnalysisForTarget(
-  db: { from: (t: string) => any },
+  db: Db,
   targetDate: string,
   targetSession: SessionKey,
   trigger: AnalysisSnapshotInput["trigger"] = "manual",

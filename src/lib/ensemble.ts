@@ -11,11 +11,7 @@ import { statPairScore, type StatLayer, type NumberStat } from "./stats";
 import { drawNumbers, type Draw } from "./uk49";
 
 export type Classification =
-  | "CONFIRMED"
-  | "SUPPORTED"
-  | "FORMULA ONLY"
-  | "STATISTICAL ONLY"
-  | "CONFLICT";
+  "CONFIRMED" | "SUPPORTED" | "FORMULA ONLY" | "STATISTICAL ONLY" | "CONFLICT";
 
 export const CLASS_STYLE: Record<Classification, string> = {
   CONFIRMED: "bg-emerald-500/15 text-emerald-400",
@@ -79,7 +75,12 @@ export interface EnsembleResult {
 const CONFIRM_RANK = 12;
 const SUPPORT_RANK = 22;
 
-function classify(inFormula: boolean, formulaScore: number, statScore: number, statRank: number): Classification {
+function classify(
+  inFormula: boolean,
+  formulaScore: number,
+  statScore: number,
+  statRank: number,
+): Classification {
   if (inFormula) {
     if (statRank <= CONFIRM_RANK || statScore >= 0.72) return "CONFIRMED";
     if (statRank <= SUPPORT_RANK || statScore >= 0.5) return "SUPPORTED";
@@ -152,11 +153,17 @@ export function buildEnsemble(
   /* STEP 8 — the banker always stays the formula's banker. */
   const formulaBanker = prediction.bankers[0] ?? null;
   const bankerCandidate = formulaBanker
-    ? candidates.find((c) => c.n === formulaBanker.n) ?? null
+    ? (candidates.find((c) => c.n === formulaBanker.n) ?? null)
     : null;
   const challenger = stats.numbers[0]?.n ?? null;
   const banker: BankerVerdict = !formulaBanker
-    ? { banker: null, status: "NO BANKER", statRank: null, challenger, note: "The formula produced no banker for this slot." }
+    ? {
+        banker: null,
+        status: "NO BANKER",
+        statRank: null,
+        challenger,
+        note: "The formula produced no banker for this slot.",
+      }
     : bankerCandidate?.classification === "CONFIRMED"
       ? {
           banker: formulaBanker,
@@ -225,7 +232,11 @@ export function buildEnsemble(
   };
 
   const formulaTriplets: EnsembleTriplet[] = prediction.rows.slice(0, 6).map((r) => {
-    const t = [r.banker.n, r.pair[1].n, r.bonus.n].sort((x, y) => x - y) as [number, number, number];
+    const t = [r.banker.n, r.pair[1].n, r.bonus.n].sort((x, y) => x - y) as [
+      number,
+      number,
+      number,
+    ];
     const score = tripletScore(t);
     return {
       triplet: t,
@@ -246,7 +257,8 @@ export function buildEnsemble(
     candidates,
     banker,
     pairs: pairs.sort((a, b) => {
-      if ((a.source === "formula") !== (b.source === "formula")) return a.source === "formula" ? -1 : 1;
+      if ((a.source === "formula") !== (b.source === "formula"))
+        return a.source === "formula" ? -1 : 1;
       return b.statScore - a.statScore;
     }),
     triplets: [...formulaTriplets, ...statTriplets],
@@ -327,7 +339,7 @@ export function scoreComponents(
   return {
     rows,
     totals,
-    best: (winners.length > 1 ? "tied" : winners[0] ?? "tied") as Scoreboard["best"],
+    best: (winners.length > 1 ? "tied" : (winners[0] ?? "tied")) as Scoreboard["best"],
     suggestedWeight: totals.tests >= 20 ? null : null,
   };
 }

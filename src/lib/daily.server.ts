@@ -166,7 +166,8 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     .filter((p) => p.status !== "graded")
     .sort((a, b) =>
       a.target_date === b.target_date
-        ? sessionIndex(a.target_session as SessionKey) - sessionIndex(b.target_session as SessionKey)
+        ? sessionIndex(a.target_session as SessionKey) -
+          sessionIndex(b.target_session as SessionKey)
         : a.target_date < b.target_date
           ? -1
           : 1,
@@ -212,7 +213,8 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     .filter((p) => p.status === "graded" && p.grading)
     .sort((a, b) =>
       a.target_date === b.target_date
-        ? sessionIndex(b.target_session as SessionKey) - sessionIndex(a.target_session as SessionKey)
+        ? sessionIndex(b.target_session as SessionKey) -
+          sessionIndex(a.target_session as SessionKey)
         : a.target_date < b.target_date
           ? 1
           : -1,
@@ -366,7 +368,9 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       session,
       hasPrediction: Boolean(prediction),
       hasResult: Boolean(draw),
-      sessionVerified: draw ? (draw as { session_verified?: boolean }).session_verified !== false : false,
+      sessionVerified: draw
+        ? (draw as { session_verified?: boolean }).session_verified !== false
+        : false,
       graded: prediction?.status === "graded",
       now,
     });
@@ -399,7 +403,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
           overdue: stillMissing.filter((m) => m.overdue).map((m) => m.drawId),
           unresolved,
         }
-        : { recovered: [], stillMissing: [], overdue: [], unresolved },
+      : { recovered: [], stillMissing: [], overdue: [], unresolved },
     learning: {
       sampleSize: learning.sampleSize,
       recentHits: learning.recentHits,

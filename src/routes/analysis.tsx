@@ -120,9 +120,7 @@ function AnalysisPage() {
             )
             .join("; "),
         "Per-strategy outputs: " +
-          result.perStrategy
-            .map((p) => `${p.strategy.name}: [${p.numbers.join(",")}]`)
-            .join(" | "),
+          result.perStrategy.map((p) => `${p.strategy.name}: [${p.numbers.join(",")}]`).join(" | "),
         "Last five draws: " +
           draws
             .slice(0, 5)
@@ -157,8 +155,8 @@ function AnalysisPage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Analysis engine</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Every active strategy runs independently, outputs are normalised to 1–49, and
-        numbers produced by multiple strategies rank higher.
+        Every active strategy runs independently, outputs are normalised to 1–49, and numbers
+        produced by multiple strategies rank higher.
       </p>
 
       <Panel className="mb-6">
@@ -190,7 +188,10 @@ function AnalysisPage() {
               <Download className="mr-2 size-4" />
               CSV
             </Button>
-            <Button onClick={() => ai.mutate()} disabled={ai.isPending || result.ranked.length === 0}>
+            <Button
+              onClick={() => ai.mutate()}
+              disabled={ai.isPending || result.ranked.length === 0}
+            >
               <BrainCircuit className="mr-2 size-4" />
               {ai.isPending ? "Thinking…" : "AI insights"}
             </Button>
@@ -204,8 +205,8 @@ function AnalysisPage() {
             <p className="text-xs text-muted-foreground">Checking for a saved snapshot…</p>
           ) : snapshot ? (
             <p className="text-xs text-muted-foreground">
-              <span className="font-semibold text-primary">Saved snapshot</span> · top-5 and
-              pairs stored{" "}
+              <span className="font-semibold text-primary">Saved snapshot</span> · top-5 and pairs
+              stored{" "}
               {new Date(snapshot.created_at).toLocaleString("en-GB", {
                 dateStyle: "medium",
                 timeStyle: "short",
@@ -247,7 +248,10 @@ function AnalysisPage() {
               <div className="flex flex-wrap gap-3">
                 {result.ranked.slice(0, 18).map((r, i) => (
                   <div key={r.number} className="text-center">
-                    <Ball n={r.number} variant={i === 0 ? "primary" : i < 6 ? "accent" : "default"} />
+                    <Ball
+                      n={r.number}
+                      variant={i === 0 ? "primary" : i < 6 ? "accent" : "default"}
+                    />
                     <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                       {r.score.toFixed(1)} · {r.hits.length}×
                     </p>
@@ -275,8 +279,8 @@ function AnalysisPage() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Run AI insights to get an explanation of strategy overlap, recurring
-              calculations and historical trends.
+              Run AI insights to get an explanation of strategy overlap, recurring calculations and
+              historical trends.
             </p>
           )}
         </Panel>
@@ -290,10 +294,7 @@ function AnalysisPage() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {pairs.map((p, i) => (
-              <div
-                key={p.pair.join("-")}
-                className="rounded-xl border border-border/70 p-3"
-              >
+              <div key={p.pair.join("-")} className="rounded-xl border border-border/70 p-3">
                 <div className="flex items-center gap-3">
                   <Ball n={p.pair[0]} variant={i === 0 ? "primary" : "accent"} />
                   <Ball n={p.pair[1]} variant={i === 0 ? "primary" : "accent"} />
@@ -331,8 +332,8 @@ function AnalysisPage() {
           </div>
         )}
         <p className="mt-3 text-xs text-muted-foreground">
-          Pair score = combined agreement of both numbers + bonus for strategies that
-          produced both + how often the pair has landed together historically.
+          Pair score = combined agreement of both numbers + bonus for strategies that produced both
+          + how often the pair has landed together historically.
         </p>
       </Panel>
 

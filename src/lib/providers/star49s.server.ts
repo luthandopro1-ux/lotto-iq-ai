@@ -47,8 +47,7 @@ export function parseLongDate(input: string): string | null {
  */
 export function parseStar49s(html: string, session: SessionKey): RawDraw[] {
   const text = html.split('\\"').join('"');
-  const re =
-    /"balls":\[([^\]]*)\],"d_date":"([^"]+)","resultTime":"([^"]*)"/g;
+  const re = /"balls":\[([^\]]*)\],"d_date":"([^"]+)","resultTime":"([^"]*)"/g;
   const out: RawDraw[] = [];
   const seen = new Set<string>();
   let match: RegExpExecArray | null;
@@ -108,8 +107,7 @@ export function parseLatestPage(html: string, session: SessionKey): RawDraw[] {
 async function get(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; LottoIQ/1.0; +https://lumtechsolutions.co.za)",
+      "User-Agent": "Mozilla/5.0 (compatible; LottoIQ/1.0; +https://lumtechsolutions.co.za)",
       Accept: "text/html",
     },
   });
@@ -139,4 +137,3 @@ export const star49s: DrawProvider = {
     return parseStar49s(html, session);
   },
 };
-

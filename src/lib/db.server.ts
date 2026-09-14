@@ -1,5 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+
+/** Shared server-side Supabase client type — import this instead of a loose `any`-based shape. */
+export type Db = SupabaseClient<Database>;
 
 /**
  * Server-side Supabase client.

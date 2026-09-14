@@ -513,11 +513,52 @@ The codebase should be easy to extend because new strategies and analysis method
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requires Node.js 20+ — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+if you don't have it.
+
+### Open in VS Code
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
+code .
+```
+
+VS Code will prompt to install the recommended extensions
+(`.vscode/extensions.json` — ESLint, Prettier, Tailwind CSS IntelliSense).
+Accept that, then open a terminal in VS Code and run:
+
+```sh
+npm install
+cp .env.example .env    # fill in real Supabase values — see DEPLOY.md
 npm run dev
 ```
+
+The app runs at **http://localhost:8080**. Common commands are wired up
+as VS Code tasks too (`Terminal → Run Task…`): `dev`, `typecheck`,
+`lint`, `build`, `deploy: dry run`, `deploy`. Format-on-save and
+ESLint auto-fix are enabled by default via `.vscode/settings.json`.
+
+### Everyday commands
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Local dev server (Node runtime, not the Worker) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint (flat config, Prettier-integrated) |
+| `npm run build` | Production build → `.output/` |
+| `npm run deploy:dry-run` | Build + validate the Cloudflare Worker bundle, no publish |
+| `npm run deploy` | Build + `wrangler deploy` — publishes to Cloudflare |
+
+### Pushing to git & deploying
+
+```sh
+git remote add origin https://github.com/<you>/<repo-name>.git
+git push -u origin main
+```
+
+Then see **[DEPLOY.md](./DEPLOY.md)** for the full Cloudflare deployment
+walkthrough — secrets, the security checklist (`ADMIN_API_KEY`,
+`SYNC_WEBHOOK_SECRET`), and applying the Supabase migrations. CI
+(`.github/workflows/ci.yml`) runs typecheck, lint, build, and a
+Cloudflare bundle dry-run on every push and PR to `main`.

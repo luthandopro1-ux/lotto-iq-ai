@@ -15,10 +15,14 @@ export function validateDraw(raw: RawDraw): ValidationResult {
   if (!SESSIONS.includes(raw.session)) return { ok: false, reason: "bad session" };
   if (raw.numbers.length !== 6) return { ok: false, reason: "needs 6 numbers" };
   for (const n of raw.numbers) {
-    if (!Number.isInteger(n) || n < 1 || n > 49) return { ok: false, reason: "number out of range" };
+    if (!Number.isInteger(n) || n < 1 || n > 49)
+      return { ok: false, reason: "number out of range" };
   }
   if (new Set(raw.numbers).size !== 6) return { ok: false, reason: "duplicate numbers" };
-  if (raw.booster !== null && (!Number.isInteger(raw.booster) || raw.booster < 1 || raw.booster > 49)) {
+  if (
+    raw.booster !== null &&
+    (!Number.isInteger(raw.booster) || raw.booster < 1 || raw.booster > 49)
+  ) {
     return { ok: false, reason: "booster out of range" };
   }
   const time = new Date(`${raw.draw_date}T00:00:00Z`).getTime();
@@ -63,7 +67,10 @@ export interface IngestSummary {
   skipped: number;
   rejected: number;
   retries: number;
-  perSession: Record<string, { found: number; inserted: number; skipped: number; rejected: number }>;
+  perSession: Record<
+    string,
+    { found: number; inserted: number; skipped: number; rejected: number }
+  >;
   errors: string[];
 }
 
@@ -261,7 +268,6 @@ export async function findGaps(limitPerSession = 60): Promise<GapReport[]> {
   return reports;
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Catch-up: never skip a draw                                         */
 /* ------------------------------------------------------------------ */
@@ -283,10 +289,7 @@ export async function missingSlots(days = 4, now = new Date()): Promise<MissingS
   from.setUTCDate(from.getUTCDate() - days);
   const fromDate = from.toISOString().slice(0, 10);
 
-  const { data } = await db
-    .from("draws")
-    .select("draw_date,session")
-    .gte("draw_date", fromDate);
+  const { data } = await db.from("draws").select("draw_date,session").gte("draw_date", fromDate);
   const have = new Set((data ?? []).map((d) => `${d.draw_date}#${d.session}`));
 
   return slotsUpTo(fromDate, now)

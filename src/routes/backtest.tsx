@@ -46,7 +46,13 @@ interface StrategyOption {
   enabled: boolean;
 }
 
-const colors = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+const colors = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 const MODEL_KEYS = ["A", "B", "C", "D", "E"] as const;
 
 function BacktestPage() {
@@ -104,7 +110,16 @@ function BacktestPage() {
 
   const exportCsv = (row: BacktestRow) => {
     const csv = [
-      ["model", "label", "tests", "total_matches", "avg_matches", "best_matches", "hit_rate_%", "avg_pair_matches"],
+      [
+        "model",
+        "label",
+        "tests",
+        "total_matches",
+        "avg_matches",
+        "best_matches",
+        "hit_rate_%",
+        "avg_pair_matches",
+      ],
       ...row.results.models.map((m) => [
         m.key,
         `"${m.label}"`,
@@ -130,9 +145,9 @@ function BacktestPage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Backtesting engine</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Walk every historical draw in the range strictly forward — no lookahead — and compare
-        five model variants: pure formula, pure statistics, two blends, and a learning-adjusted
-        formula. Every run is saved so it never has to be recomputed to view again.
+        Walk every historical draw in the range strictly forward — no lookahead — and compare five
+        model variants: pure formula, pure statistics, two blends, and a learning-adjusted formula.
+        Every run is saved so it never has to be recomputed to view again.
       </p>
 
       <Panel className="mb-6">
@@ -204,7 +219,9 @@ function BacktestPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">{row.label || `${row.date_from} → ${row.date_to}`}</span>
+                    <span className="font-semibold">
+                      {row.label || `${row.date_from} → ${row.date_to}`}
+                    </span>
                     <History className="size-3.5 text-muted-foreground" />
                   </div>
                   <p className="mt-1 text-muted-foreground">
@@ -263,18 +280,26 @@ function BacktestPage() {
                             <p className="text-[10px] text-muted-foreground">{m.description}</p>
                           </td>
                           <td className="py-2 pr-4 font-mono text-muted-foreground">{m.tests}</td>
-                          <td className="py-2 pr-4 font-mono text-primary">{m.avgMatches.toFixed(2)}</td>
-                          <td className="py-2 pr-4 font-mono text-muted-foreground">{m.bestMatches}</td>
-                          <td className="py-2 pr-4 font-mono text-muted-foreground">{m.hitRate.toFixed(0)}%</td>
-                          <td className="py-2 font-mono text-muted-foreground">{m.avgPairMatches.toFixed(2)}</td>
+                          <td className="py-2 pr-4 font-mono text-primary">
+                            {m.avgMatches.toFixed(2)}
+                          </td>
+                          <td className="py-2 pr-4 font-mono text-muted-foreground">
+                            {m.bestMatches}
+                          </td>
+                          <td className="py-2 pr-4 font-mono text-muted-foreground">
+                            {m.hitRate.toFixed(0)}%
+                          </td>
+                          <td className="py-2 font-mono text-muted-foreground">
+                            {m.avgPairMatches.toFixed(2)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Avg / draw = mean of the model's top-6 numbers that matched the actual draw.
-                  Pair matches = combinations within the top-6 pick where both numbers hit.
+                  Avg / draw = mean of the model's top-6 numbers that matched the actual draw. Pair
+                  matches = combinations within the top-6 pick where both numbers hit.
                 </p>
               </Panel>
 
@@ -282,9 +307,23 @@ function BacktestPage() {
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={active.results.timeline}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                      <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} />
-                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--border)"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="date"
+                        stroke="var(--muted-foreground)"
+                        fontSize={10}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        stroke="var(--muted-foreground)"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                      />
                       <Tooltip
                         contentStyle={{
                           background: "var(--popover)",

@@ -25,7 +25,10 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 export function dateFeatures(date: string): DateFeatures {
   const d = new Date(`${date}T12:00:00Z`);
-  const digits = date.replace(/\D/g, "").split("").reduce((a, c) => a + Number(c), 0);
+  const digits = date
+    .replace(/\D/g, "")
+    .split("")
+    .reduce((a, c) => a + Number(c), 0);
   return {
     weekday: d.getUTCDay(),
     weekdayLabel: WEEKDAYS[d.getUTCDay()] ?? "",
@@ -124,7 +127,6 @@ export function replayFormula(
   return out;
 }
 
-
 export function dateIntelligence(
   strategies: Strategy[],
   sequence: StructuredDraw[],
@@ -136,7 +138,10 @@ export function dateIntelligence(
     string,
     StrategyDatePerf & { lagSum: number; lagCount: number; matchSum: number }
   >();
-  const bucket = new Map<string, { tests: number; matchSum: number; perStrategy: Map<string, number> }>();
+  const bucket = new Map<
+    string,
+    { tests: number; matchSum: number; perStrategy: Map<string, number> }
+  >();
 
   const touch = (key: string) =>
     bucket.get(key) ?? bucket.set(key, { tests: 0, matchSum: 0, perStrategy: new Map() }).get(key)!;

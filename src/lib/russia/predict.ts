@@ -1,5 +1,12 @@
 import { scoreAllNumbers } from "./engine";
-import type { LotteryDraw, LotteryGame, NumberScore, EnsembleWeights, RussiaPrediction, PredictionGrade } from "./types";
+import type {
+  LotteryDraw,
+  LotteryGame,
+  NumberScore,
+  EnsembleWeights,
+  RussiaPrediction,
+  PredictionGrade,
+} from "./types";
 import { DEFAULT_WEIGHTS } from "./types";
 
 const decade = (n: number) => Math.floor(n / 10);
@@ -44,7 +51,10 @@ function selectBankers(ranked: NumberScore[], count: number): NumberScore[] {
 
 function explain(score: NumberScore): string[] {
   const lines: string[] = [];
-  const entries = Object.entries(score.components) as [keyof NumberScore["components"], { value: number; detail: string }][];
+  const entries = Object.entries(score.components) as [
+    keyof NumberScore["components"],
+    { value: number; detail: string },
+  ][];
   const top = entries.sort((a, b) => b[1].value - a[1].value).slice(0, 3);
   const labels: Record<string, string> = {
     frequency: "Frequency",
@@ -96,7 +106,10 @@ export function buildRussiaPrediction(
 }
 
 /** Grades a stored prediction against the actual winning numbers. */
-export function gradeRussiaPrediction(prediction: RussiaPrediction, actualNumbers: number[]): PredictionGrade {
+export function gradeRussiaPrediction(
+  prediction: RussiaPrediction,
+  actualNumbers: number[],
+): PredictionGrade {
   const actual = new Set(actualNumbers);
   const matchedNumbers = prediction.predictedNumbers.filter((n) => actual.has(n));
   const bankerHits = prediction.bankers.filter((n) => actual.has(n)).length;
