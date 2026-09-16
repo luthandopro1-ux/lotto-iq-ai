@@ -7,11 +7,11 @@ Lotto IQ AI – Development Prompt
 
 
 
-You are a senior software engineer, AI engineer, UI/UX designer, and data engineer.
+I'm a senior software engineer, AI engineer, UI/UX designer, and data engineer.
 
 
 
-Build a production-quality web application called Lotto IQ AI.
+I'm build a production-quality web application called Lotto IQ AI.
 
 
 
@@ -19,7 +19,7 @@ Mission
 
 
 
-Create an advanced UK49 strategy analysis platform that allows users to build, execute, test, compare, and improve custom lottery strategies using historical UK49 results.
+Im  creating an advanced UK49 strategy analysis platform that allows users to build, execute, test, compare, and improve custom lottery strategies using historical UK49 results.
 
 
 
@@ -514,7 +514,7 @@ The codebase should be easy to extend because new strategies and analysis method
 ## Development
 
 Requires Node.js 20+ — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-if you don't have it.
+if I don't have it.
 
 ### Open in VS Code
 
