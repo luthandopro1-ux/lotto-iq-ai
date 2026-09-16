@@ -38,3 +38,12 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Package manager lockfiles this project doesn't use — npm (package-lock.json)
+# is the one true lockfile; a stray bun/yarn/pnpm lockfile can confuse
+# auto-detecting build systems (this caused a real Cloudflare Workers Builds
+# failure once already).
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
