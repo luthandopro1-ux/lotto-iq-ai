@@ -27,8 +27,8 @@ npx wrangler secret put SUPABASE_URL --config .output/server/wrangler.json
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config .output/server/wrangler.json
 npx wrangler secret put SUPABASE_PUBLISHABLE_KEY --config .output/server/wrangler.json
 npx wrangler secret put LOVABLE_API_KEY --config .output/server/wrangler.json   # optional
-npx wrangler secret put ADMIN_API_KEY --config .output/server/wrangler.json    # recommended, see Security below
-npx wrangler secret put SYNC_WEBHOOK_SECRET --config .output/server/wrangler.json  # recommended, see Security below
+npx wrangler secret put ADMIN_API_KEY --config .output/server/wrangler.json    # required in production
+npx wrangler secret put SYNC_WEBHOOK_SECRET --config .output/server/wrangler.json  # required in production
 ```
 
 (`wrangler secret put` needs the Worker to exist first — run `npm run
@@ -40,9 +40,9 @@ picks them up. Or set them ahead of time as **plaintext vars** under
 
 ## 3. Security — read this before making the URL public
 
-This app has **no user-account system** — every page and, by default,
-every server function is open to anyone who has the URL. That's fine
-for local/private use, but before sharing the deployed link:
+This app has **no user-account system**. Read-only pages remain public,
+but protected mutations and the sync webhook fail closed unless their
+production secrets are configured:
 
 - **Set `ADMIN_API_KEY`** (any long random string — `openssl rand -hex
   32`) as a Cloudflare secret. Once set, every function that writes
@@ -53,14 +53,12 @@ for local/private use, but before sharing the deployed link:
   it's saved in that browser's `localStorage` and attached to every
   request automatically from then on. Read-only pages (dashboards,
   history, predictions) stay public either way.
-- **Set `SYNC_WEBHOOK_SECRET`** (a different long random string) so the
-  `/api/public/hooks/uk49s-sync` cron endpoint isn't protected only by
-  the publishable key (which, being public-by-design, is visible in the
-  browser bundle). See step 4 below — the same value goes into Supabase
-  Vault as `uk49s_sync_secret`.
-- Everything above is optional in the sense that the app still runs
-  without it — but until both are set, anyone with the link can write
-  arbitrary draws/strategies and spend your `LOVABLE_API_KEY` budget.
+- **Set `SYNC_WEBHOOK_SECRET`** (a different long random string). The
+  `/api/public/hooks/uk49s-sync` endpoint never accepts the publishable
+  key as a fallback. See step 4 below — the same value goes into
+  Supabase Vault as `uk49s_sync_secret`.
+- Both secrets are required in production; do not publish a Worker until
+  they are configured.
 
 ## 4. Build & deploy
 

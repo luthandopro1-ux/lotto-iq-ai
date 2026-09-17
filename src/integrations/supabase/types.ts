@@ -291,6 +291,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      lottery_ingest_runs: {
+        Row: {
+          detail: Json;
+          error: string | null;
+          finished_at: string | null;
+          found: number;
+          game_id: string;
+          id: string;
+          inserted: number;
+          provider: string;
+          skipped: number;
+          started_at: string;
+          status: string;
+        };
+        Insert: {
+          detail?: Json;
+          error?: string | null;
+          finished_at?: string | null;
+          found?: number;
+          game_id: string;
+          id?: string;
+          inserted?: number;
+          provider: string;
+          skipped?: number;
+          started_at?: string;
+          status?: string;
+        };
+        Update: {
+          detail?: Json;
+          error?: string | null;
+          finished_at?: string | null;
+          found?: number;
+          game_id?: string;
+          id?: string;
+          inserted?: number;
+          provider?: string;
+          skipped?: number;
+          started_at?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lottery_ingest_runs_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lottery_backtests: {
         Row: {
           created_at: string;
