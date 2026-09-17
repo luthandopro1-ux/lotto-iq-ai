@@ -6,9 +6,8 @@ import { getRequest } from "@tanstack/react-start/server";
  * spend paid API credits (strategies, draws, Russia draws/backtests,
  * analysis refresh, AI insights/import).
  *
- * Off by default so existing deployments keep working exactly as
- * before. Set ADMIN_API_KEY as a Cloudflare secret to turn it on:
- * once set, every guarded call must include a matching
+ * Production is fail-closed: ADMIN_API_KEY must be configured and every
+ * guarded call must include a matching
  * `x-admin-key` header or it's rejected with 401. The app's own
  * browser UI attaches this automatically once you save the same key
  * under Settings → Admin key (stored in localStorage, never sent
@@ -23,9 +22,7 @@ import { getRequest } from "@tanstack/react-start/server";
 export const adminGuard = createMiddleware({ type: "function" }).server(async ({ next }) => {
   const required = process.env["ADMIN_API_KEY"];
   if (!required) {
-    // Not configured — behave exactly as before (open). Recommended to
-    // set this before exposing the deployment publicly; see DEPLOY.md.
-    return next();
+    throw new Error("Unauthorized: ADMIN_API_KEY is not configured.");
   }
 
   const request = getRequest();

@@ -8,21 +8,16 @@ export const Route = createFileRoute("/api/public/hooks/uk49s-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Prefer a dedicated secret (never shipped to the browser). Falls
-        // back to the publishable key only if SYNC_WEBHOOK_SECRET isn't
-        // set yet, so existing deployments keep working — but the
-        // publishable key is, by definition, public (it's in the client
-        // bundle), so anyone can currently trigger this endpoint until
-        // SYNC_WEBHOOK_SECRET is configured. Set it before relying on
-        // this for anything beyond "someone re-ran a harmless sync".
         const dedicated = process.env["SYNC_WEBHOOK_SECRET"];
-        const expected =
-          dedicated || process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_ANON_KEY"];
+        // Never fall back to a publishable/anon key: it is public by design.
+        if (!dedicated) {
+          return Response.json({ error: "Sync endpoint is not configured" }, { status: 503 });
+        }
         const provided =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (!expected || provided !== expected) {
+        if (provided !== dedicated) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
