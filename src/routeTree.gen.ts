@@ -16,9 +16,12 @@ import { Route as DrawsRouteImport } from './routes/draws'
 import { Route as EnsembleRouteImport } from './routes/ensemble'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as PredictionsRouteImport } from './routes/predictions'
+import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RussiaRouteImport } from './routes/russia'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as StructureRouteImport } from './routes/structure'
+import { Route as ApiPublicHooksManusWebhookRouteImport } from './routes/api/public/hooks/manus-webhook'
+import { Route as ApiPublicHooksResearchWeeklyRouteImport } from './routes/api/public/hooks/research-weekly'
 import { Route as ApiPublicHooksUk49sSyncRouteImport } from './routes/api/public/hooks/uk49s-sync'
 
 const IndexRoute = IndexRouteImport.update({
@@ -56,6 +59,11 @@ const PredictionsRoute = PredictionsRouteImport.update({
   path: '/predictions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RussiaRoute = RussiaRouteImport.update({
   id: '/russia',
   path: '/russia',
@@ -71,6 +79,18 @@ const StructureRoute = StructureRouteImport.update({
   path: '/structure',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksManusWebhookRoute =
+  ApiPublicHooksManusWebhookRouteImport.update({
+    id: '/api/public/hooks/manus-webhook',
+    path: '/api/public/hooks/manus-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksResearchWeeklyRoute =
+  ApiPublicHooksResearchWeeklyRouteImport.update({
+    id: '/api/public/hooks/research-weekly',
+    path: '/api/public/hooks/research-weekly',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksUk49sSyncRoute = ApiPublicHooksUk49sSyncRouteImport.update({
   id: '/api/public/hooks/uk49s-sync',
   path: '/api/public/hooks/uk49s-sync',
@@ -85,9 +105,12 @@ export interface FileRoutesByFullPath {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
+  '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRoutesByTo {
@@ -98,9 +121,12 @@ export interface FileRoutesByTo {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
+  '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRoutesById {
@@ -112,9 +138,12 @@ export interface FileRoutesById {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
+  '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRouteTypes {
@@ -127,9 +156,12 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/api/public/hooks/manus-webhook'
+    | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/uk49s-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,9 +172,12 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/api/public/hooks/manus-webhook'
+    | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/uk49s-sync'
   id:
     | '__root__'
@@ -153,9 +188,12 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/api/public/hooks/manus-webhook'
+    | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/uk49s-sync'
   fileRoutesById: FileRoutesById
 }
@@ -167,9 +205,12 @@ export interface RootRouteChildren {
   EnsembleRoute: typeof EnsembleRoute
   HistoryRoute: typeof HistoryRoute
   PredictionsRoute: typeof PredictionsRoute
+  ResearchRoute: typeof ResearchRoute
   RussiaRoute: typeof RussiaRoute
   StrategiesRoute: typeof StrategiesRoute
   StructureRoute: typeof StructureRoute
+  ApiPublicHooksManusWebhookRoute: typeof ApiPublicHooksManusWebhookRoute
+  ApiPublicHooksResearchWeeklyRoute: typeof ApiPublicHooksResearchWeeklyRoute
   ApiPublicHooksUk49sSyncRoute: typeof ApiPublicHooksUk49sSyncRoute
 }
 
@@ -224,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PredictionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/russia': {
       id: '/russia'
       path: '/russia'
@@ -245,6 +293,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StructureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/manus-webhook': {
+      id: '/api/public/hooks/manus-webhook'
+      path: '/api/public/hooks/manus-webhook'
+      fullPath: '/api/public/hooks/manus-webhook'
+      preLoaderRoute: typeof ApiPublicHooksManusWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/research-weekly': {
+      id: '/api/public/hooks/research-weekly'
+      path: '/api/public/hooks/research-weekly'
+      fullPath: '/api/public/hooks/research-weekly'
+      preLoaderRoute: typeof ApiPublicHooksResearchWeeklyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/uk49s-sync': {
       id: '/api/public/hooks/uk49s-sync'
       path: '/api/public/hooks/uk49s-sync'
@@ -263,9 +325,12 @@ const rootRouteChildren: RootRouteChildren = {
   EnsembleRoute: EnsembleRoute,
   HistoryRoute: HistoryRoute,
   PredictionsRoute: PredictionsRoute,
+  ResearchRoute: ResearchRoute,
   RussiaRoute: RussiaRoute,
   StrategiesRoute: StrategiesRoute,
   StructureRoute: StructureRoute,
+  ApiPublicHooksManusWebhookRoute: ApiPublicHooksManusWebhookRoute,
+  ApiPublicHooksResearchWeeklyRoute: ApiPublicHooksResearchWeeklyRoute,
   ApiPublicHooksUk49sSyncRoute: ApiPublicHooksUk49sSyncRoute,
 }
 export const routeTree = rootRouteImport

@@ -11,6 +11,7 @@ import {
   Compass,
   Globe,
   KeyRound,
+  Microscope,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
@@ -26,6 +27,7 @@ const nav = [
   { to: "/structure", label: "Structure", icon: Compass },
   { to: "/backtest", label: "Backtest", icon: History },
   { to: "/russia", label: "Russia", icon: Globe },
+  { to: "/research", label: "Research", icon: Microscope },
 ] as const;
 
 function AdminKeyControl() {

@@ -249,6 +249,48 @@ export type Database = {
           },
         ];
       };
+      research_reports: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          error: string | null;
+          findings: Json | null;
+          id: string;
+          manus_task_id: string | null;
+          manus_task_url: string | null;
+          our_model_snapshot: Json;
+          prompt: string;
+          raw_message: string | null;
+          status: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          findings?: Json | null;
+          id?: string;
+          manus_task_id?: string | null;
+          manus_task_url?: string | null;
+          our_model_snapshot?: Json;
+          prompt: string;
+          raw_message?: string | null;
+          status?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          findings?: Json | null;
+          id?: string;
+          manus_task_id?: string | null;
+          manus_task_url?: string | null;
+          our_model_snapshot?: Json;
+          prompt?: string;
+          raw_message?: string | null;
+          status?: string;
+        };
+        Relationships: [];
+      };
       lottery_backtests: {
         Row: {
           created_at: string;
