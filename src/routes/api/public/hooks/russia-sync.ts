@@ -5,7 +5,8 @@ export const Route = createFileRoute("/api/public/hooks/russia-sync")({
     handlers: {
       POST: async ({ request }) => {
         const secret = process.env["SYNC_WEBHOOK_SECRET"];
-        if (!secret) return Response.json({ error: "Sync endpoint is not configured" }, { status: 503 });
+        if (!secret)
+          return Response.json({ error: "Sync endpoint is not configured" }, { status: 503 });
         const provided =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??

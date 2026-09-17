@@ -22,6 +22,7 @@ import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as StructureRouteImport } from './routes/structure'
 import { Route as ApiPublicHooksManusWebhookRouteImport } from './routes/api/public/hooks/manus-webhook'
 import { Route as ApiPublicHooksResearchWeeklyRouteImport } from './routes/api/public/hooks/research-weekly'
+import { Route as ApiPublicHooksRussiaSyncRouteImport } from './routes/api/public/hooks/russia-sync'
 import { Route as ApiPublicHooksUk49sSyncRouteImport } from './routes/api/public/hooks/uk49s-sync'
 
 const IndexRoute = IndexRouteImport.update({
@@ -91,6 +92,12 @@ const ApiPublicHooksResearchWeeklyRoute =
     path: '/api/public/hooks/research-weekly',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRussiaSyncRoute =
+  ApiPublicHooksRussiaSyncRouteImport.update({
+    id: '/api/public/hooks/russia-sync',
+    path: '/api/public/hooks/russia-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksUk49sSyncRoute = ApiPublicHooksUk49sSyncRouteImport.update({
   id: '/api/public/hooks/uk49s-sync',
   path: '/api/public/hooks/uk49s-sync',
@@ -111,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/structure': typeof StructureRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
+  '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRoutesByTo {
@@ -127,6 +135,7 @@ export interface FileRoutesByTo {
   '/structure': typeof StructureRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
+  '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRoutesById {
@@ -144,6 +153,7 @@ export interface FileRoutesById {
   '/structure': typeof StructureRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
+  '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
   '/api/public/hooks/uk49s-sync': typeof ApiPublicHooksUk49sSyncRoute
 }
 export interface FileRouteTypes {
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/structure'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
+    | '/api/public/hooks/russia-sync'
     | '/api/public/hooks/uk49s-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/structure'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
+    | '/api/public/hooks/russia-sync'
     | '/api/public/hooks/uk49s-sync'
   id:
     | '__root__'
@@ -194,6 +206,7 @@ export interface FileRouteTypes {
     | '/structure'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
+    | '/api/public/hooks/russia-sync'
     | '/api/public/hooks/uk49s-sync'
   fileRoutesById: FileRoutesById
 }
@@ -211,6 +224,7 @@ export interface RootRouteChildren {
   StructureRoute: typeof StructureRoute
   ApiPublicHooksManusWebhookRoute: typeof ApiPublicHooksManusWebhookRoute
   ApiPublicHooksResearchWeeklyRoute: typeof ApiPublicHooksResearchWeeklyRoute
+  ApiPublicHooksRussiaSyncRoute: typeof ApiPublicHooksRussiaSyncRoute
   ApiPublicHooksUk49sSyncRoute: typeof ApiPublicHooksUk49sSyncRoute
 }
 
@@ -307,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksResearchWeeklyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/russia-sync': {
+      id: '/api/public/hooks/russia-sync'
+      path: '/api/public/hooks/russia-sync'
+      fullPath: '/api/public/hooks/russia-sync'
+      preLoaderRoute: typeof ApiPublicHooksRussiaSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/uk49s-sync': {
       id: '/api/public/hooks/uk49s-sync'
       path: '/api/public/hooks/uk49s-sync'
@@ -331,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   StructureRoute: StructureRoute,
   ApiPublicHooksManusWebhookRoute: ApiPublicHooksManusWebhookRoute,
   ApiPublicHooksResearchWeeklyRoute: ApiPublicHooksResearchWeeklyRoute,
+  ApiPublicHooksRussiaSyncRoute: ApiPublicHooksRussiaSyncRoute,
   ApiPublicHooksUk49sSyncRoute: ApiPublicHooksUk49sSyncRoute,
 }
 export const routeTree = rootRouteImport

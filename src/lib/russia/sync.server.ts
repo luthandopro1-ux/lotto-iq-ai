@@ -21,16 +21,30 @@ export async function syncRussiaGame(db: Db, gameCode: string): Promise<RussiaSy
     .single();
   if (!game.active) {
     if (run?.id) {
-      await db.from("lottery_ingest_runs").update({ status: "retired", finished_at: new Date().toISOString() }).eq("id", run.id);
+      await db
+        .from("lottery_ingest_runs")
+        .update({ status: "retired", finished_at: new Date().toISOString() })
+        .eq("id", run.id);
     }
-    return { gameCode, status: "retired", found: 0, inserted: 0, skipped: 0, errors: ["Game is retired; no current results exist."] };
+    return {
+      gameCode,
+      status: "retired",
+      found: 0,
+      inserted: 0,
+      skipped: 0,
+      errors: ["Game is retired; no current results exist."],
+    };
   }
 
   try {
     const remote = await fetchRussiaLatest(game);
     const numbers = remote.map((draw) => draw.drawNumber);
     const { data: existing } = numbers.length
-      ? await db.from("lottery_draws").select("draw_number").eq("game_id", game.id).in("draw_number", numbers)
+      ? await db
+          .from("lottery_draws")
+          .select("draw_number")
+          .eq("game_id", game.id)
+          .in("draw_number", numbers)
       : { data: [] };
     const have = new Set((existing ?? []).map((row) => Number(row.draw_number)));
     let inserted = 0;
@@ -46,25 +60,40 @@ export async function syncRussiaGame(db: Db, gameCode: string): Promise<RussiaSy
       inserted += 1;
     }
     if (run?.id) {
-      await db.from("lottery_ingest_runs").update({
-        status: "ok",
-        finished_at: new Date().toISOString(),
-        found: remote.length,
-        inserted,
-        skipped: remote.length - inserted,
-        detail: { source: provider } as never,
-      }).eq("id", run.id);
+      await db
+        .from("lottery_ingest_runs")
+        .update({
+          status: "ok",
+          finished_at: new Date().toISOString(),
+          found: remote.length,
+          inserted,
+          skipped: remote.length - inserted,
+          detail: { source: provider } as never,
+        })
+        .eq("id", run.id);
     }
-    return { gameCode, status: "ok", found: remote.length, inserted, skipped: remote.length - inserted, errors: [] };
+    return {
+      gameCode,
+      status: "ok",
+      found: remote.length,
+      inserted,
+      skipped: remote.length - inserted,
+      errors: [],
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (run?.id) {
-      await db.from("lottery_ingest_runs").update({ status: "failed", finished_at: new Date().toISOString(), error: message }).eq("id", run.id);
+      await db
+        .from("lottery_ingest_runs")
+        .update({ status: "failed", finished_at: new Date().toISOString(), error: message })
+        .eq("id", run.id);
     }
     return { gameCode, status: "failed", found: 0, inserted: 0, skipped: 0, errors: [message] };
   }
 }
 
 export async function syncAllRussiaGames(db: Db): Promise<RussiaSyncSummary[]> {
-  return Promise.all(["ru_5_50", "ru_6_45", "ru_7_49"].map((gameCode) => syncRussiaGame(db, gameCode)));
+  return Promise.all(
+    ["ru_5_50", "ru_6_45", "ru_7_49"].map((gameCode) => syncRussiaGame(db, gameCode)),
+  );
 }

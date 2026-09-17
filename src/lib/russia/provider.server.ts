@@ -17,11 +17,18 @@ function parseIsoDate(value: unknown): string | null {
 }
 
 function validateDraw(raw: RawRussiaDraw, game: LotteryGame): RawRussiaDraw {
-  if (!Number.isSafeInteger(raw.drawNumber) || raw.drawNumber <= 0) throw new Error(`Invalid draw number for ${game.code}`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.drawDate)) throw new Error(`Invalid draw date for ${game.code}`);
+  if (!Number.isSafeInteger(raw.drawNumber) || raw.drawNumber <= 0)
+    throw new Error(`Invalid draw number for ${game.code}`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.drawDate))
+    throw new Error(`Invalid draw date for ${game.code}`);
   const numbers = [...new Set(raw.winningNumbers)].sort((a, b) => a - b);
-  if (numbers.length !== game.numbers_drawn) throw new Error(`Expected ${game.numbers_drawn} numbers for ${game.code}`);
-  if (numbers.some((n) => !Number.isInteger(n) || n < game.number_range_min || n > game.number_range_max)) {
+  if (numbers.length !== game.numbers_drawn)
+    throw new Error(`Expected ${game.numbers_drawn} numbers for ${game.code}`);
+  if (
+    numbers.some(
+      (n) => !Number.isInteger(n) || n < game.number_range_min || n > game.number_range_max,
+    )
+  ) {
     throw new Error(`Number out of range for ${game.code}`);
   }
   return { ...raw, winningNumbers: numbers };
@@ -39,7 +46,8 @@ async function fetchText(url: string): Promise<string> {
 }
 
 export async function fetchRussiaLatest(game: LotteryGame): Promise<RawRussiaDraw[]> {
-  if (game.code === "ru_5_50") throw new Error("ru_5_50 is retired; no current results are available");
+  if (game.code === "ru_5_50")
+    throw new Error("ru_5_50 is retired; no current results are available");
 
   if (game.code === "ru_6_45") {
     const text = await fetchText(SIX_FORTY_FIVE_URL);
@@ -78,7 +86,9 @@ export async function fetchRussiaLatest(game: LotteryGame): Promise<RawRussiaDra
     // unstable markup and relative Russian date labels. Do not guess a parser:
     // fail closed until a documented Stoloto feed or a locked parser fixture is
     // available. Manual import remains supported through addRussiaDraw.
-    throw new Error(`Automated 7/49 import is disabled until the official archive contract is stable: ${SEVEN_FORTY_NINE_URL}`);
+    throw new Error(
+      `Automated 7/49 import is disabled until the official archive contract is stable: ${SEVEN_FORTY_NINE_URL}`,
+    );
   }
 
   throw new Error(`No provider configured for ${game.code}`);
