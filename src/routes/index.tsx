@@ -1,228 +1,283 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { AppShell, Panel, Ball } from "@/components/AppShell";
-import { SESSION_LABELS, currentSession, drawNumbers, type Draw, type Strategy } from "@/lib/uk49";
-import { runAnalysis } from "@/lib/engine";
-import { Link } from "@tanstack/react-router";
-import { Activity, CalendarDays, Database, Library } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  BarChart3,
+  BrainCircuit,
+  CheckCircle2,
+  Database,
+  FlaskConical,
+  ShieldCheck,
+  Sparkles,
+  Target,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — UK49 Strategy Analysis Dashboard" },
+      { title: "Lotto IQ AI — UK49 Strategy Analysis by Lum Tech Solutions" },
       {
         name: "description",
         content:
-          "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis.",
+          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ AI by Lum Tech Solutions.",
       },
-      { property: "og:title", content: "Lotto IQ AI — UK49 Strategy Analysis Dashboard" },
+      { name: "author", content: "Lum Tech Solutions" },
+      { property: "og:title", content: "Lotto IQ AI — UK49 Strategy Analysis" },
       {
         property: "og:description",
         content:
-          "Build, run and backtest custom UK49 strategies against historical draw data with AI-assisted analysis.",
+          "A transparent UK49 strategy-analysis workspace from Lum Tech Solutions. No guarantees, no claims of changing random odds.",
       },
     ],
   }),
-  component: Dashboard,
+  component: LandingPage,
 });
 
-function Dashboard() {
-  const { data: draws = [], isLoading } = useQuery({
-    queryKey: ["draws", "recent"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("draws")
-        .select("*")
-        .order("draw_date", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data as Draw[];
-    },
-  });
+const features = [
+  {
+    icon: Database,
+    title: "Work from draw history",
+    description:
+      "Bring historical UK49 results into the analysis workflow through the existing sync, import, or manual-entry tools.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Test strategy ideas",
+    description:
+      "Use the existing strategy library to compare rule-based signals, weights, and historical overlap.",
+  },
+  {
+    icon: BarChart3,
+    title: "See ranked candidates",
+    description:
+      "The dashboard presents a ranked number output when usable draw history is available for the engine.",
+  },
+];
 
-  const { data: strategies = [] } = useQuery({
-    queryKey: ["strategies"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("strategies").select("*");
-      if (error) throw error;
-      return data as Strategy[];
-    },
-  });
+const principles = [
+  "Historical analysis, not a promise of future outcomes",
+  "Transparent strategy inputs and repeatable workflows",
+  "Developed by Lum Tech Solutions",
+];
 
-  const active = strategies.filter((s) => s.enabled);
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
-  const session = currentSession(now ?? undefined);
-
-  const freq = new Map<number, number>();
-  draws.forEach((d) => drawNumbers(d).forEach((n) => freq.set(n, (freq.get(n) ?? 0) + 1)));
-  const hot = Array.from(freq.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
-    .map(([number, count]) => ({ number: String(number), count }));
-
-  const ranked =
-    draws.length > 0
-      ? runAnalysis(active, {
-          date: now ?? new Date(),
-          session,
-          history: draws,
-          previousThree: draws.slice(0, 3),
-        }).ranked.slice(0, 6)
-      : [];
-
-  const stats = [
-    { label: "Draws stored", value: draws.length >= 200 ? "200+" : draws.length, icon: Database },
-    { label: "Active strategies", value: active.length, icon: Library },
-    { label: "Current session", value: now ? SESSION_LABELS[session] : "—", icon: Activity },
-    {
-      label: "Today",
-      value: now ? now.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—",
-      icon: CalendarDays,
-    },
-  ];
-
+function LandingPage() {
   return (
-    <AppShell>
-      <div className="glass mb-6 overflow-hidden rounded-3xl p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
-          UK49 Strategy Intelligence
-        </p>
-        <h1 className="mt-3 max-w-2xl text-3xl font-bold sm:text-4xl">
-          Build, run and <span className="gradient-text">stress-test</span> your own UK49
-          strategies.
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Paste results in any format and the AI importer files them for you. Every active strategy
-          then runs against your history and the outputs are ranked by overlap and weight.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+    <main className="min-h-screen overflow-hidden">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
+        <Link to="/" className="flex items-center gap-2.5">
+          <span className="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
+            <BrainCircuit className="size-5" />
+          </span>
+          <span className="font-display text-lg font-bold tracking-tight">
+            Lotto<span className="gradient-text">IQ</span> AI
+          </span>
+        </Link>
+        <nav className="flex items-center gap-2">
           <Link
-            to="/draws"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            to="/dashboard"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 sm:inline-flex"
           >
-            AI import draws
+            Dashboard
           </Link>
           <Link
-            to="/analysis"
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-secondary/60"
+            to="/account"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 sm:inline-flex"
           >
-            Run analysis
+            Create account
           </Link>
-        </div>
-      </div>
+          <Link
+            to="/strategies"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground md:inline-flex"
+          >
+            Strategies
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Explore Lotto IQ <ArrowRight className="size-4" />
+          </Link>
+        </nav>
+      </header>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="glass glass-hover rounded-2xl p-5">
-            <Icon className="size-4 text-primary" />
-            <p className="mt-3 font-display text-2xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
+      <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-10 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pb-28 lg:pt-20">
+        <div>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            <Sparkles className="size-3.5" /> UK49 strategy intelligence
           </div>
-        ))}
-      </div>
+          <h1 className="max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+            Make your lottery analysis <span className="gradient-text">repeatable.</span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+            Lotto IQ AI helps you organize UK49 draw history, run defined strategies, and inspect
+            ranked candidate numbers in one focused workspace.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_0_30px_-10px_var(--color-primary)] transition-transform hover:-translate-y-0.5"
+            >
+              Open the dashboard <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              to="/draws"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/30 px-5 py-3 text-sm font-semibold transition-colors hover:bg-secondary/60"
+            >
+              View draw workflow
+            </Link>
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              Create your workspace
+            </Link>
+          </div>
+          <p className="mt-5 max-w-xl text-xs leading-6 text-muted-foreground">
+            Lotto IQ analyses historical results and user-defined strategies. Lottery draws are
+            random; this product does not guarantee outcomes or claim to change the odds.
+          </p>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Top ranked candidates" className="lg:col-span-2">
-          {ranked.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {isLoading ? "Loading…" : "Import some draws to generate candidates."}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-3">
-              {ranked.map((r, i) => (
-                <div key={r.number} className="text-center">
-                  <Ball n={r.number} variant={i === 0 ? "primary" : i < 3 ? "accent" : "default"} />
-                  <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                    {r.score.toFixed(1)}
-                  </p>
+        <div className="relative">
+          <div className="absolute -inset-6 rounded-[2rem] bg-primary/10 blur-3xl" />
+          <div className="glass relative rounded-[2rem] p-5 sm:p-7">
+            <div className="mb-5 flex items-center justify-between border-b border-border/70 pb-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                  Lotto IQ dashboard
+                </p>
+                <p className="mt-1 font-display text-lg font-semibold">Ranked candidate view</p>
+              </div>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
+                Engine ready
+              </span>
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-background/40 p-4">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Top ranked candidates</span>
+                <span>Strategy overlap</span>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {[7, 14, 23, 31, 44].map((number, index) => (
+                  <div key={number} className="text-center">
+                    <span
+                      className={
+                        index === 0 ? "ball ball-primary" : index < 3 ? "ball ball-accent" : "ball"
+                      }
+                    >
+                      {number}
+                    </span>
+                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+                      {(9.4 - index * 0.8).toFixed(1)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 border-t border-border/60 pt-4 text-xs leading-5 text-muted-foreground">
+                Demonstration layout only. Live values depend on available draw history and the
+                active strategy set.
+              </p>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              {["11 strategies", "4 draw sessions", "1 analysis loop"].map((label) => (
+                <div
+                  key={label}
+                  className="rounded-xl border border-border/60 bg-card/40 px-2 py-3 text-[10px] font-medium text-muted-foreground"
+                >
+                  {label}
                 </div>
               ))}
             </div>
-          )}
-        </Panel>
-
-        <Panel title="Analysis status">
-          <ul className="space-y-2 text-sm">
-            <li className="flex justify-between">
-              <span className="text-muted-foreground">Engine</span>
-              <span className="text-primary">Ready</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="text-muted-foreground">Strategies loaded</span>
-              <span>{strategies.length}</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="text-muted-foreground">History depth</span>
-              <span>{draws.length} draws</span>
-            </li>
-          </ul>
-        </Panel>
-
-        <Panel title="Most frequent numbers" className="lg:col-span-2">
-          {hot.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data yet.</p>
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hot}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis
-                    dataKey="number"
-                    stroke="var(--muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="var(--muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--popover)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Panel>
-
-        <Panel title="Recent draws">
-          <div className="space-y-3">
-            {draws.slice(0, 5).map((d) => (
-              <div key={d.id} className="rounded-xl border border-border/70 p-3">
-                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{d.draw_date}</span>
-                  <span className="text-primary">{SESSION_LABELS[d.session]}</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {drawNumbers(d).map((n, i) => (
-                    <span key={i} className="ball size-8 text-xs">
-                      {n}
-                    </span>
-                  ))}
-                  {d.booster != null && (
-                    <span className="ball ball-accent size-8 text-xs">{d.booster}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-            {draws.length === 0 && (
-              <p className="text-sm text-muted-foreground">No draws imported yet.</p>
-            )}
           </div>
-        </Panel>
-      </div>
-    </AppShell>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 pb-20 sm:px-8">
+        <div className="mb-8 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Built around the current product
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+            A clearer way to work with your strategies.
+          </h2>
+          <p className="mt-4 leading-7 text-muted-foreground">
+            The public experience introduces the same analysis foundation already available in Lotto
+            IQ, without inventing capabilities that are not yet live.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {features.map(({ icon: Icon, title, description }) => (
+            <article key={title} className="glass glass-hover rounded-2xl p-6">
+              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon className="size-5" />
+              </span>
+              <h3 className="mt-5 font-display text-lg font-semibold">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Product principles
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold">Useful, inspectable, and honest.</h2>
+        </div>
+        <div className="space-y-3">
+          {principles.map((principle) => (
+            <div
+              key={principle}
+              className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/20 p-4 text-sm text-muted-foreground"
+            >
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+              <span>{principle}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-5 mb-12 rounded-3xl border border-primary/20 bg-primary/10 px-6 py-10 text-center sm:mx-8 sm:px-10">
+        <Target className="mx-auto size-7 text-primary" />
+        <h2 className="mt-4 font-display text-3xl font-bold">
+          Start with the analysis that exists today.
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          Explore the current dashboard, import draw history, and see how the existing strategy
+          engine works. Accounts and Premium features will be introduced only when they are ready.
+        </p>
+        <Link
+          to="/dashboard"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          Open Lotto IQ <ArrowRight className="size-4" />
+        </Link>
+      </section>
+
+      <footer className="mx-auto flex max-w-7xl flex-col gap-2 border-t border-border/60 px-5 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <span>
+          © {new Date().getFullYear()} Lum Tech Solutions. Lotto IQ AI, developed by Lum Tech
+          Solutions.
+        </span>
+        <span className="inline-flex flex-wrap items-center gap-3">
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/support" className="hover:text-foreground">
+            Support
+          </Link>
+          <Link to="/faq" className="hover:text-foreground">
+            FAQ
+          </Link>
+          <Link to="/notifications" className="hover:text-foreground">
+            Notifications
+          </Link>
+          <span className="inline-flex items-center gap-2">
+            <ShieldCheck className="size-3.5 text-primary" /> Historical analysis only. No
+            guaranteed outcomes.
+          </span>
+        </span>
+      </footer>
+    </main>
   );
 }

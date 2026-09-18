@@ -12,12 +12,14 @@ import {
   Globe,
   KeyRound,
   Microscope,
+  ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
 
 const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/predictions", label: "Predictions", icon: Target },
   { to: "/history", label: "Ledger", icon: ScrollText },
   { to: "/draws", label: "Draws", icon: Database },
@@ -28,6 +30,8 @@ const nav = [
   { to: "/backtest", label: "Backtest", icon: History },
   { to: "/russia", label: "Russia", icon: Globe },
   { to: "/research", label: "Research", icon: Microscope },
+  { to: "/premium", label: "Premium", icon: Crown },
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 function AdminKeyControl() {
@@ -80,7 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/dashboard" className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
               <BrainCircuit className="size-5" />
             </span>
@@ -95,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={to}
                   to={to}
-                  activeOptions={{ exact: to === "/" }}
+                  activeOptions={{ exact: to === "/dashboard" }}
                   className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground data-[status=active]:bg-primary/15 data-[status=active]:text-primary"
                 >
                   <Icon className="size-4" />
