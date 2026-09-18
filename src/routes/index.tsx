@@ -74,9 +74,15 @@ function LandingPage() {
         <nav className="flex items-center gap-2">
           <Link
             to="/dashboard"
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground sm:inline-flex"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 sm:inline-flex"
           >
             Dashboard
+          </Link>
+          <Link
+            to="/account"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/60 sm:inline-flex"
+          >
+            Create account
           </Link>
           <Link
             to="/strategies"
@@ -116,6 +122,12 @@ function LandingPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/30 px-5 py-3 text-sm font-semibold transition-colors hover:bg-secondary/60"
             >
               View draw workflow
+            </Link>
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              Create your workspace
             </Link>
           </div>
           <p className="mt-5 max-w-xl text-xs leading-6 text-muted-foreground">
