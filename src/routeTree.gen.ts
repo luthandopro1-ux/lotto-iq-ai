@@ -17,13 +17,17 @@ import { Route as BacktestRouteImport } from './routes/backtest'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DrawsRouteImport } from './routes/draws'
 import { Route as EnsembleRouteImport } from './routes/ensemble'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as PredictionsRouteImport } from './routes/predictions'
 import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RussiaRouteImport } from './routes/russia'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as StructureRouteImport } from './routes/structure'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as ApiPublicHooksManusWebhookRouteImport } from './routes/api/public/hooks/manus-webhook'
 import { Route as ApiPublicHooksResearchWeeklyRouteImport } from './routes/api/public/hooks/research-weekly'
 import { Route as ApiPublicHooksRussiaSyncRouteImport } from './routes/api/public/hooks/russia-sync'
@@ -69,9 +73,19 @@ const EnsembleRoute = EnsembleRouteImport.update({
   path: '/ensemble',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PredictionsRoute = PredictionsRouteImport.update({
@@ -82,6 +96,11 @@ const PredictionsRoute = PredictionsRouteImport.update({
 const PremiumRoute = PremiumRouteImport.update({
   id: '/premium',
   path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchRoute = ResearchRouteImport.update({
@@ -102,6 +121,11 @@ const StrategiesRoute = StrategiesRouteImport.update({
 const StructureRoute = StructureRouteImport.update({
   id: '/structure',
   path: '/structure',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksManusWebhookRoute =
@@ -137,13 +161,17 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
+  '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/notifications': typeof NotificationsRoute
   '/predictions': typeof PredictionsRoute
   '/premium': typeof PremiumRoute
+  '/privacy': typeof PrivacyRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/support': typeof SupportRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -158,13 +186,17 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
+  '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/notifications': typeof NotificationsRoute
   '/predictions': typeof PredictionsRoute
   '/premium': typeof PremiumRoute
+  '/privacy': typeof PrivacyRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/support': typeof SupportRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -180,13 +212,17 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
+  '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/notifications': typeof NotificationsRoute
   '/predictions': typeof PredictionsRoute
   '/premium': typeof PremiumRoute
+  '/privacy': typeof PrivacyRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
+  '/support': typeof SupportRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -203,13 +239,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/draws'
     | '/ensemble'
+    | '/faq'
     | '/history'
+    | '/notifications'
     | '/predictions'
     | '/premium'
+    | '/privacy'
     | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/support'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -224,13 +264,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/draws'
     | '/ensemble'
+    | '/faq'
     | '/history'
+    | '/notifications'
     | '/predictions'
     | '/premium'
+    | '/privacy'
     | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/support'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -245,13 +289,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/draws'
     | '/ensemble'
+    | '/faq'
     | '/history'
+    | '/notifications'
     | '/predictions'
     | '/premium'
+    | '/privacy'
     | '/research'
     | '/russia'
     | '/strategies'
     | '/structure'
+    | '/support'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -267,13 +315,17 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DrawsRoute: typeof DrawsRoute
   EnsembleRoute: typeof EnsembleRoute
+  FaqRoute: typeof FaqRoute
   HistoryRoute: typeof HistoryRoute
+  NotificationsRoute: typeof NotificationsRoute
   PredictionsRoute: typeof PredictionsRoute
   PremiumRoute: typeof PremiumRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResearchRoute: typeof ResearchRoute
   RussiaRoute: typeof RussiaRoute
   StrategiesRoute: typeof StrategiesRoute
   StructureRoute: typeof StructureRoute
+  SupportRoute: typeof SupportRoute
   ApiPublicHooksManusWebhookRoute: typeof ApiPublicHooksManusWebhookRoute
   ApiPublicHooksResearchWeeklyRoute: typeof ApiPublicHooksResearchWeeklyRoute
   ApiPublicHooksRussiaSyncRoute: typeof ApiPublicHooksRussiaSyncRoute
@@ -338,11 +390,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnsembleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/history': {
       id: '/history'
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/predictions': {
@@ -357,6 +423,13 @@ declare module '@tanstack/react-router' {
       path: '/premium'
       fullPath: '/premium'
       preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/research': {
@@ -385,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/structure'
       fullPath: '/structure'
       preLoaderRoute: typeof StructureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/manus-webhook': {
@@ -427,13 +507,17 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DrawsRoute: DrawsRoute,
   EnsembleRoute: EnsembleRoute,
+  FaqRoute: FaqRoute,
   HistoryRoute: HistoryRoute,
+  NotificationsRoute: NotificationsRoute,
   PredictionsRoute: PredictionsRoute,
   PremiumRoute: PremiumRoute,
+  PrivacyRoute: PrivacyRoute,
   ResearchRoute: ResearchRoute,
   RussiaRoute: RussiaRoute,
   StrategiesRoute: StrategiesRoute,
   StructureRoute: StructureRoute,
+  SupportRoute: SupportRoute,
   ApiPublicHooksManusWebhookRoute: ApiPublicHooksManusWebhookRoute,
   ApiPublicHooksResearchWeeklyRoute: ApiPublicHooksResearchWeeklyRoute,
   ApiPublicHooksRussiaSyncRoute: ApiPublicHooksRussiaSyncRoute,

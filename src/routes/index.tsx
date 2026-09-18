@@ -212,7 +212,7 @@ function LandingPage() {
 
       <footer className="mx-auto flex max-w-7xl flex-col gap-2 border-t border-border/60 px-5 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <span>© {new Date().getFullYear()} Lum Tech Solutions. Lotto IQ AI, developed by Lum Tech Solutions.</span>
-        <span className="inline-flex items-center gap-2"><ShieldCheck className="size-3.5 text-primary" /> Historical analysis only. No guaranteed outcomes.</span>
+        <span className="inline-flex flex-wrap items-center gap-3"><Link to="/privacy" className="hover:text-foreground">Privacy</Link><Link to="/support" className="hover:text-foreground">Support</Link><Link to="/faq" className="hover:text-foreground">FAQ</Link><Link to="/notifications" className="hover:text-foreground">Notifications</Link><span className="inline-flex items-center gap-2"><ShieldCheck className="size-3.5 text-primary" /> Historical analysis only. No guaranteed outcomes.</span></span>
       </footer>
     </main>
   );

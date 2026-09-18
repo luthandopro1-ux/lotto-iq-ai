@@ -1,0 +1,15 @@
+{
+  "name": "Lotto IQ AI",
+  "short_name": "Lotto IQ",
+  "description": "UK49 historical draw and strategy analysis by Lum Tech Solutions.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101725",
+  "theme_color": "#36d6bd",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
