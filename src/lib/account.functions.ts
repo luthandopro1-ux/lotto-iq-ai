@@ -7,10 +7,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 type AccountRow = Record<string, unknown>;
 type AccountDb = {
   from: (table: string) => {
-    upsert: (values: AccountRow, options?: { onConflict?: string }) => Promise<{ error: Error | null }>;
+    upsert: (
+      values: AccountRow,
+      options?: { onConflict?: string },
+    ) => Promise<{ error: Error | null }>;
     insert: (values: AccountRow) => Promise<{ error: Error | null }>;
     select: (columns: string) => {
-      eq: (column: string, value: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
         maybeSingle: () => Promise<{ data: AccountRow | null; error: Error | null }>;
       };
     };
@@ -19,15 +25,19 @@ type AccountDb = {
 
 export const ensurePersonalAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ displayName: z.string().trim().max(80).optional() }).parse(input ?? {}))
+  .inputValidator((input: unknown) =>
+    z.object({ displayName: z.string().trim().max(80).optional() }).parse(input ?? {}),
+  )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as AccountDb;
     const userId = context.userId;
 
-    const profileResult = await db.from("profiles").upsert(
-      { id: userId, ...(data.displayName ? { display_name: data.displayName } : {}) },
-      { onConflict: "id" },
-    );
+    const profileResult = await db
+      .from("profiles")
+      .upsert(
+        { id: userId, ...(data.displayName ? { display_name: data.displayName } : {}) },
+        { onConflict: "id" },
+      );
     if (profileResult.error) throw new Error(profileResult.error.message);
 
     const existing = await db
@@ -56,14 +66,20 @@ export const ensurePersonalAccount = createServerFn({ method: "POST" })
       workspace = reloaded.data;
     }
 
-    const membership = await db.from("workspace_members").upsert(
-      { workspace_id: String(workspace["id"]), user_id: userId, role: "owner" },
-      { onConflict: "workspace_id,user_id" },
-    );
+    const membership = await db
+      .from("workspace_members")
+      .upsert(
+        { workspace_id: String(workspace["id"]), user_id: userId, role: "owner" },
+        { onConflict: "workspace_id,user_id" },
+      );
     if (membership.error) throw new Error(membership.error.message);
 
     const settings = await db.from("workspace_settings").upsert(
-      { workspace_id: String(workspace["id"]), game_code: "UK49", timezone: "Africa/Johannesburg" },
+      {
+        workspace_id: String(workspace["id"]),
+        game_code: "UK49",
+        timezone: "Africa/Johannesburg",
+      },
       { onConflict: "workspace_id" },
     );
     if (settings.error) throw new Error(settings.error.message);

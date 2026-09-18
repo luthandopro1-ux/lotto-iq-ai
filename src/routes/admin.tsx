@@ -12,7 +12,8 @@ export const Route = createFileRoute("/admin")({
       { title: "Lotto IQ AI — Admin Operations" },
       {
         name: "description",
-        content: "Lum Tech Solutions operator dashboard for Lotto IQ AI data and analysis operations.",
+        content:
+          "Lum Tech Solutions operator dashboard for Lotto IQ AI data and analysis operations.",
       },
     ],
   }),
@@ -61,8 +62,16 @@ function AdminDashboard() {
   const gradedPredictions = predictions.filter((prediction) => prediction.outcome != null).length;
 
   const stats = [
-    { label: "Draw rows sampled", value: drawsLoading ? "…" : draws.length >= 1000 ? "1,000+" : draws.length, icon: Database },
-    { label: "Active strategies", value: strategiesLoading ? "…" : activeStrategies, icon: Library },
+    {
+      label: "Draw rows sampled",
+      value: drawsLoading ? "…" : draws.length >= 1000 ? "1,000+" : draws.length,
+      icon: Database,
+    },
+    {
+      label: "Active strategies",
+      value: strategiesLoading ? "…" : activeStrategies,
+      icon: Library,
+    },
     { label: "Recent predictions", value: predictions.length, icon: Target },
     { label: "Graded in view", value: gradedPredictions, icon: Activity },
   ];
@@ -76,7 +85,9 @@ function AdminDashboard() {
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold">Admin dashboard</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Monitor Lotto IQ data freshness, strategy configuration, ingestion runs, and prediction ledger activity. Customer accounts and Premium billing are not part of this operator view yet.
+            Monitor Lotto IQ data freshness, strategy configuration, ingestion runs, and prediction
+            ledger activity. Customer accounts and Premium billing are not part of this operator
+            view yet.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 rounded-xl border border-border/70 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
@@ -99,7 +110,14 @@ function AdminDashboard() {
       <SyncLog />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <Panel title="Strategy configuration" action={<a href="/strategies" className="text-xs text-primary hover:underline">Open strategy manager</a>}>
+        <Panel
+          title="Strategy configuration"
+          action={
+            <a href="/strategies" className="text-xs text-primary hover:underline">
+              Open strategy manager
+            </a>
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-xs">
               <thead>
@@ -116,35 +134,54 @@ function AdminDashboard() {
                     <td className="py-2 font-medium">{strategy.name}</td>
                     <td className="py-2 text-muted-foreground">{strategy.category}</td>
                     <td className="py-2 font-mono text-muted-foreground">{strategy.rule_type}</td>
-                    <td className={`py-2 ${strategy.enabled ? "text-emerald-400" : "text-muted-foreground"}`}>
+                    <td
+                      className={`py-2 ${strategy.enabled ? "text-emerald-400" : "text-muted-foreground"}`}
+                    >
                       {strategy.enabled ? "enabled" : "disabled"}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {strategies.length === 0 && <p className="py-4 text-sm text-muted-foreground">No strategies returned.</p>}
+            {strategies.length === 0 && (
+              <p className="py-4 text-sm text-muted-foreground">No strategies returned.</p>
+            )}
           </div>
         </Panel>
 
-        <Panel title="Recent prediction ledger" action={<a href="/history" className="text-xs text-primary hover:underline">Open ledger</a>}>
+        <Panel
+          title="Recent prediction ledger"
+          action={
+            <a href="/history" className="text-xs text-primary hover:underline">
+              Open ledger
+            </a>
+          }
+        >
           <div className="space-y-3">
             {predictions.map((prediction) => (
               <div key={prediction.id} className="rounded-xl border border-border/70 p-3">
                 <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="font-mono">{prediction.target_date} · {prediction.target_session}</span>
+                  <span className="font-mono">
+                    {prediction.target_date} · {prediction.target_session}
+                  </span>
                   <span className="text-primary">{prediction.outcome ?? prediction.status}</span>
                 </div>
-                <p className="mt-1 text-[11px] text-muted-foreground">created {new Date(prediction.created_at).toLocaleString("en-GB")}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  created {new Date(prediction.created_at).toLocaleString("en-GB")}
+                </p>
               </div>
             ))}
-            {predictions.length === 0 && <p className="text-sm text-muted-foreground">No prediction records returned.</p>}
+            {predictions.length === 0 && (
+              <p className="text-sm text-muted-foreground">No prediction records returned.</p>
+            )}
           </div>
         </Panel>
       </div>
 
       <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-muted-foreground">
-        <strong className="text-amber-300">Security boundary:</strong> this dashboard uses the repository’s existing shared <code>ADMIN_API_KEY</code> gate for mutation functions. It is an operator control, not customer authentication or a Premium entitlement system.
+        <strong className="text-amber-300">Security boundary:</strong> this dashboard uses the
+        repository’s existing shared <code>ADMIN_API_KEY</code> gate for mutation functions. It is
+        an operator control, not customer authentication or a Premium entitlement system.
       </div>
     </AppShell>
   );

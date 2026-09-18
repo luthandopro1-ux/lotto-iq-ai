@@ -14,6 +14,14 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/") || url.pathname.includes("supabase") || url.pathname === "/dashboard" || url.pathname.startsWith("/premium")) return;
-  event.respondWith(fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match("/"))));
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.includes("supabase") ||
+    url.pathname === "/dashboard" ||
+    url.pathname.startsWith("/premium")
+  )
+    return;
+  event.respondWith(
+    fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
+  );
 });

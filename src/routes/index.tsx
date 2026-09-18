@@ -56,7 +56,7 @@ const features = [
 const principles = [
   "Historical analysis, not a promise of future outcomes",
   "Transparent strategy inputs and repeatable workflows",
-    "Developed by Lum Tech Solutions",
+  "Developed by Lum Tech Solutions",
 ];
 
 function LandingPage() {
@@ -108,7 +108,8 @@ function LandingPage() {
             Make your lottery analysis <span className="gradient-text">repeatable.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-            Lotto IQ AI helps you organize UK49 draw history, run defined strategies, and inspect ranked candidate numbers in one focused workspace.
+            Lotto IQ AI helps you organize UK49 draw history, run defined strategies, and inspect
+            ranked candidate numbers in one focused workspace.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -131,7 +132,8 @@ function LandingPage() {
             </Link>
           </div>
           <p className="mt-5 max-w-xl text-xs leading-6 text-muted-foreground">
-            Lotto IQ analyses historical results and user-defined strategies. Lottery draws are random; this product does not guarantee outcomes or claim to change the odds.
+            Lotto IQ analyses historical results and user-defined strategies. Lottery draws are
+            random; this product does not guarantee outcomes or claim to change the odds.
           </p>
         </div>
 
@@ -140,10 +142,14 @@ function LandingPage() {
           <div className="glass relative rounded-[2rem] p-5 sm:p-7">
             <div className="mb-5 flex items-center justify-between border-b border-border/70 pb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">Lotto IQ dashboard</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                  Lotto IQ dashboard
+                </p>
                 <p className="mt-1 font-display text-lg font-semibold">Ranked candidate view</p>
               </div>
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">Engine ready</span>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
+                Engine ready
+              </span>
             </div>
             <div className="rounded-2xl border border-border/70 bg-background/40 p-4">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -153,18 +159,32 @@ function LandingPage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 {[7, 14, 23, 31, 44].map((number, index) => (
                   <div key={number} className="text-center">
-                    <span className={index === 0 ? "ball ball-primary" : index < 3 ? "ball ball-accent" : "ball"}>{number}</span>
-                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">{(9.4 - index * 0.8).toFixed(1)}</p>
+                    <span
+                      className={
+                        index === 0 ? "ball ball-primary" : index < 3 ? "ball ball-accent" : "ball"
+                      }
+                    >
+                      {number}
+                    </span>
+                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+                      {(9.4 - index * 0.8).toFixed(1)}
+                    </p>
                   </div>
                 ))}
               </div>
               <p className="mt-5 border-t border-border/60 pt-4 text-xs leading-5 text-muted-foreground">
-                Demonstration layout only. Live values depend on available draw history and the active strategy set.
+                Demonstration layout only. Live values depend on available draw history and the
+                active strategy set.
               </p>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
               {["11 strategies", "4 draw sessions", "1 analysis loop"].map((label) => (
-                <div key={label} className="rounded-xl border border-border/60 bg-card/40 px-2 py-3 text-[10px] font-medium text-muted-foreground">{label}</div>
+                <div
+                  key={label}
+                  className="rounded-xl border border-border/60 bg-card/40 px-2 py-3 text-[10px] font-medium text-muted-foreground"
+                >
+                  {label}
+                </div>
               ))}
             </div>
           </div>
@@ -173,14 +193,23 @@ function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-5 pb-20 sm:px-8">
         <div className="mb-8 max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Built around the current product</p>
-          <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">A clearer way to work with your strategies.</h2>
-          <p className="mt-4 leading-7 text-muted-foreground">The public experience introduces the same analysis foundation already available in Lotto IQ, without inventing capabilities that are not yet live.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Built around the current product
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+            A clearer way to work with your strategies.
+          </h2>
+          <p className="mt-4 leading-7 text-muted-foreground">
+            The public experience introduces the same analysis foundation already available in Lotto
+            IQ, without inventing capabilities that are not yet live.
+          </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {features.map(({ icon: Icon, title, description }) => (
             <article key={title} className="glass glass-hover rounded-2xl p-6">
-              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" /></span>
+              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon className="size-5" />
+              </span>
               <h3 className="mt-5 font-display text-lg font-semibold">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
             </article>
@@ -190,12 +219,17 @@ function LandingPage() {
 
       <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Product principles</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Product principles
+          </p>
           <h2 className="mt-3 font-display text-3xl font-bold">Useful, inspectable, and honest.</h2>
         </div>
         <div className="space-y-3">
           {principles.map((principle) => (
-            <div key={principle} className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/20 p-4 text-sm text-muted-foreground">
+            <div
+              key={principle}
+              className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/20 p-4 text-sm text-muted-foreground"
+            >
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
               <span>{principle}</span>
             </div>
@@ -205,14 +239,44 @@ function LandingPage() {
 
       <section className="mx-5 mb-12 rounded-3xl border border-primary/20 bg-primary/10 px-6 py-10 text-center sm:mx-8 sm:px-10">
         <Target className="mx-auto size-7 text-primary" />
-        <h2 className="mt-4 font-display text-3xl font-bold">Start with the analysis that exists today.</h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Explore the current dashboard, import draw history, and see how the existing strategy engine works. Accounts and Premium features will be introduced only when they are ready.</p>
-        <Link to="/dashboard" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Open Lotto IQ <ArrowRight className="size-4" /></Link>
+        <h2 className="mt-4 font-display text-3xl font-bold">
+          Start with the analysis that exists today.
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          Explore the current dashboard, import draw history, and see how the existing strategy
+          engine works. Accounts and Premium features will be introduced only when they are ready.
+        </p>
+        <Link
+          to="/dashboard"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          Open Lotto IQ <ArrowRight className="size-4" />
+        </Link>
       </section>
 
       <footer className="mx-auto flex max-w-7xl flex-col gap-2 border-t border-border/60 px-5 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <span>© {new Date().getFullYear()} Lum Tech Solutions. Lotto IQ AI, developed by Lum Tech Solutions.</span>
-        <span className="inline-flex flex-wrap items-center gap-3"><Link to="/privacy" className="hover:text-foreground">Privacy</Link><Link to="/support" className="hover:text-foreground">Support</Link><Link to="/faq" className="hover:text-foreground">FAQ</Link><Link to="/notifications" className="hover:text-foreground">Notifications</Link><span className="inline-flex items-center gap-2"><ShieldCheck className="size-3.5 text-primary" /> Historical analysis only. No guaranteed outcomes.</span></span>
+        <span>
+          © {new Date().getFullYear()} Lum Tech Solutions. Lotto IQ AI, developed by Lum Tech
+          Solutions.
+        </span>
+        <span className="inline-flex flex-wrap items-center gap-3">
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/support" className="hover:text-foreground">
+            Support
+          </Link>
+          <Link to="/faq" className="hover:text-foreground">
+            FAQ
+          </Link>
+          <Link to="/notifications" className="hover:text-foreground">
+            Notifications
+          </Link>
+          <span className="inline-flex items-center gap-2">
+            <ShieldCheck className="size-3.5 text-primary" /> Historical analysis only. No
+            guaranteed outcomes.
+          </span>
+        </span>
       </footer>
     </main>
   );
