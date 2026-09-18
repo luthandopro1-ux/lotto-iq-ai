@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as BacktestRouteImport } from './routes/backtest'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DrawsRouteImport } from './routes/draws'
 import { Route as EnsembleRouteImport } from './routes/ensemble'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -38,6 +39,11 @@ const AnalysisRoute = AnalysisRouteImport.update({
 const BacktestRoute = BacktestRouteImport.update({
   id: '/backtest',
   path: '/backtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DrawsRoute = DrawsRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/backtest': typeof BacktestRoute
+  '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/backtest': typeof BacktestRoute
+  '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/backtest': typeof BacktestRoute
+  '/dashboard': typeof DashboardRoute
   '/draws': typeof DrawsRoute
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/backtest'
+    | '/dashboard'
     | '/draws'
     | '/ensemble'
     | '/history'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/backtest'
+    | '/dashboard'
     | '/draws'
     | '/ensemble'
     | '/history'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/backtest'
+    | '/dashboard'
     | '/draws'
     | '/ensemble'
     | '/history'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRoute: typeof AnalysisRoute
   BacktestRoute: typeof BacktestRoute
+  DashboardRoute: typeof DashboardRoute
   DrawsRoute: typeof DrawsRoute
   EnsembleRoute: typeof EnsembleRoute
   HistoryRoute: typeof HistoryRoute
@@ -249,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/backtest'
       fullPath: '/backtest'
       preLoaderRoute: typeof BacktestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/draws': {
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
   BacktestRoute: BacktestRoute,
+  DashboardRoute: DashboardRoute,
   DrawsRoute: DrawsRoute,
   EnsembleRoute: EnsembleRoute,
   HistoryRoute: HistoryRoute,
