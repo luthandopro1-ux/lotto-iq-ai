@@ -68,6 +68,18 @@ export const ensurePersonalAccount = createServerFn({ method: "POST" })
     );
     if (settings.error) throw new Error(settings.error.message);
 
+    const entitlement = await db.from("workspace_entitlements").upsert(
+      {
+        workspace_id: String(workspace["id"]),
+        plan_code: "free",
+        status: "active",
+        source: "system",
+        feature_limits: { saved_strategies: 3, backtest_days: 90, history_depth: 200 },
+      },
+      { onConflict: "workspace_id" },
+    );
+    if (entitlement.error) throw new Error(entitlement.error.message);
+
     return {
       userId,
       workspace: {

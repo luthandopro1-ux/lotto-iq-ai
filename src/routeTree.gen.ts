@@ -19,6 +19,7 @@ import { Route as DrawsRouteImport } from './routes/draws'
 import { Route as EnsembleRouteImport } from './routes/ensemble'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as PredictionsRouteImport } from './routes/predictions'
+import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RussiaRouteImport } from './routes/russia'
 import { Route as StrategiesRouteImport } from './routes/strategies'
@@ -78,6 +79,11 @@ const PredictionsRoute = PredictionsRouteImport.update({
   path: '/predictions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResearchRoute = ResearchRouteImport.update({
   id: '/research',
   path: '/research',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/premium': typeof PremiumRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/premium': typeof PremiumRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/ensemble': typeof EnsembleRoute
   '/history': typeof HistoryRoute
   '/predictions': typeof PredictionsRoute
+  '/premium': typeof PremiumRoute
   '/research': typeof ResearchRoute
   '/russia': typeof RussiaRoute
   '/strategies': typeof StrategiesRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/premium'
     | '/research'
     | '/russia'
     | '/strategies'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/premium'
     | '/research'
     | '/russia'
     | '/strategies'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/ensemble'
     | '/history'
     | '/predictions'
+    | '/premium'
     | '/research'
     | '/russia'
     | '/strategies'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   EnsembleRoute: typeof EnsembleRoute
   HistoryRoute: typeof HistoryRoute
   PredictionsRoute: typeof PredictionsRoute
+  PremiumRoute: typeof PremiumRoute
   ResearchRoute: typeof ResearchRoute
   RussiaRoute: typeof RussiaRoute
   StrategiesRoute: typeof StrategiesRoute
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PredictionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/research': {
       id: '/research'
       path: '/research'
@@ -409,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnsembleRoute: EnsembleRoute,
   HistoryRoute: HistoryRoute,
   PredictionsRoute: PredictionsRoute,
+  PremiumRoute: PremiumRoute,
   ResearchRoute: ResearchRoute,
   RussiaRoute: RussiaRoute,
   StrategiesRoute: StrategiesRoute,
