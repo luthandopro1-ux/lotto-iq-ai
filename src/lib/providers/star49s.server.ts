@@ -85,7 +85,7 @@ export function parseLatestPage(html: string, session: SessionKey): RawDraw[] {
     .replace(/&#x27;/g, "'")
     .replace(/\|+/g, "|");
   const re =
-    /(\d{1,2}(?:st|nd|rd|th)\s+[A-Za-z]+\s+\d{4})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|Bonus:\|(\d{1,2})/g;
+    /(\d{1,2}(?:st|nd|rd|th)\s+[A-Za-z]+\s+\d{4})\|(?:Winning Numbers\|)?(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(\d{1,2})\|(?:Booster|Bonus:)\|(\d{1,2})/g;
   const out: RawDraw[] = [];
   const seen = new Set<string>();
   let m: RegExpExecArray | null;
