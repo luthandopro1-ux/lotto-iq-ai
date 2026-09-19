@@ -1,4 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   BarChart3,
@@ -10,6 +12,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { getPublicProductStatus } from "@/lib/public.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,6 +63,13 @@ const principles = [
 ];
 
 function LandingPage() {
+  const statusFn = useServerFn(getPublicProductStatus);
+  const { data: status } = useQuery({
+    queryKey: ["public-product-status"],
+    queryFn: () => statusFn(),
+    staleTime: 60_000,
+  });
+
   return (
     <main className="min-h-screen overflow-hidden">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
@@ -148,7 +158,7 @@ function LandingPage() {
                 <p className="mt-1 font-display text-lg font-semibold">Ranked candidate view</p>
               </div>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
-                Engine ready
+                {status?.engineReady ? "Engine ready" : "Awaiting verified history"}
               </span>
             </div>
             <div className="rounded-2xl border border-border/70 bg-background/40 p-4">
@@ -178,7 +188,11 @@ function LandingPage() {
               </p>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-              {["11 strategies", "4 draw sessions", "1 analysis loop"].map((label) => (
+              {[
+                `${status?.activeStrategies ?? "—"} active strategies`,
+                `${status?.drawsStored ?? "—"} draws stored`,
+                "4 draw sessions",
+              ].map((label) => (
                 <div
                   key={label}
                   className="rounded-xl border border-border/60 bg-card/40 px-2 py-3 text-[10px] font-medium text-muted-foreground"
@@ -244,7 +258,8 @@ function LandingPage() {
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
           Explore the current dashboard, import draw history, and see how the existing strategy
-          engine works. Accounts and Premium features will be introduced only when they are ready.
+          engine works. Accounts and the Premium membership foundation are available; billing and
+          advertising are not active yet.
         </p>
         <Link
           to="/dashboard"

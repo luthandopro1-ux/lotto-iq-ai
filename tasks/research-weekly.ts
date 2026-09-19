@@ -1,3 +1,5 @@
+import { defineTask } from "nitro/task";
+
 /**
  * Runs Monday 06:00 UTC (see nitro.config.ts). Replaces the Supabase
  * pg_cron version of this trigger entirely — running natively on
@@ -7,7 +9,7 @@
  * for manual/external triggering if ever needed, but this is the
  * primary path now.
  */
-export default {
+export default defineTask({
   meta: {
     name: "research:weekly",
     description: "Weekly Manus research + comparison against our own real backtest numbers.",
@@ -24,4 +26,4 @@ export default {
       return { result: { error: message } };
     }
   },
-};
+});

@@ -1,3 +1,5 @@
+import { defineTask } from "nitro/task";
+
 /**
  * Runs every minute (see nitro.config.ts) but only actually does
  * anything within a short window around one of the four UK49s draw
@@ -39,7 +41,7 @@ function inSyncWindow(): boolean {
   return DRAW_TIMES_MINUTES.some((t) => now >= t - LEAD_MINUTES && now <= t + TAIL_MINUTES);
 }
 
-export default {
+export default defineTask({
   meta: {
     name: "uk49:sync-tick",
     description: "Redundant per-minute UK49 sync check around the four draw windows.",
@@ -58,4 +60,4 @@ export default {
       return { result: { skipped: false, error: message } };
     }
   },
-};
+});
