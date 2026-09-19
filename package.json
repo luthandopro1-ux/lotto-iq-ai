@@ -12,6 +12,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "deploy": "vite build && wrangler deploy --config .output/server/wrangler.json",
     "deploy:dry-run": "vite build && wrangler deploy --config .output/server/wrangler.json --dry-run",
     "cf-typegen": "wrangler types",
@@ -91,6 +92,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.2.0",
+    "vitest": "^3.2.7",
     "wrangler": "^4.129.0"
   }
 }
