@@ -13,6 +13,25 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 
+function startCapacityHeartbeat() {
+  if (typeof window === "undefined" || !navigator.sendBeacon) return () => undefined;
+  let stopped = false;
+  const send = (error = false, latencyMs = 0) => {
+    if (stopped || document.visibilityState === "hidden") return;
+    const payload = JSON.stringify({ latencyMs, error, sampled: false });
+    navigator.sendBeacon(
+      "/api/telemetry/heartbeat",
+      new Blob([payload], { type: "application/json" }),
+    );
+  };
+  send();
+  const interval = window.setInterval(() => send(), 60_000);
+  return () => {
+    stopped = true;
+    window.clearInterval(interval);
+  };
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -152,6 +171,7 @@ function RootComponent() {
         // Installation remains optional; the app works normally without it.
       });
     }
+    return startCapacityHeartbeat();
   }, []);
 
   return (

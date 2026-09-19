@@ -28,6 +28,7 @@ import { Route as RussiaRouteImport } from './routes/russia'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as StructureRouteImport } from './routes/structure'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as ApiTelemetryHeartbeatRouteImport } from './routes/api/telemetry/heartbeat'
 import { Route as ApiPublicHooksManusWebhookRouteImport } from './routes/api/public/hooks/manus-webhook'
 import { Route as ApiPublicHooksResearchWeeklyRouteImport } from './routes/api/public/hooks/research-weekly'
 import { Route as ApiPublicHooksRussiaSyncRouteImport } from './routes/api/public/hooks/russia-sync'
@@ -128,6 +129,11 @@ const SupportRoute = SupportRouteImport.update({
   path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTelemetryHeartbeatRoute = ApiTelemetryHeartbeatRouteImport.update({
+  id: '/api/telemetry/heartbeat',
+  path: '/api/telemetry/heartbeat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksManusWebhookRoute =
   ApiPublicHooksManusWebhookRouteImport.update({
     id: '/api/public/hooks/manus-webhook',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
   '/support': typeof SupportRoute
+  '/api/telemetry/heartbeat': typeof ApiTelemetryHeartbeatRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
   '/support': typeof SupportRoute
+  '/api/telemetry/heartbeat': typeof ApiTelemetryHeartbeatRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/strategies': typeof StrategiesRoute
   '/structure': typeof StructureRoute
   '/support': typeof SupportRoute
+  '/api/telemetry/heartbeat': typeof ApiTelemetryHeartbeatRoute
   '/api/public/hooks/manus-webhook': typeof ApiPublicHooksManusWebhookRoute
   '/api/public/hooks/research-weekly': typeof ApiPublicHooksResearchWeeklyRoute
   '/api/public/hooks/russia-sync': typeof ApiPublicHooksRussiaSyncRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/structure'
     | '/support'
+    | '/api/telemetry/heartbeat'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/structure'
     | '/support'
+    | '/api/telemetry/heartbeat'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/structure'
     | '/support'
+    | '/api/telemetry/heartbeat'
     | '/api/public/hooks/manus-webhook'
     | '/api/public/hooks/research-weekly'
     | '/api/public/hooks/russia-sync'
@@ -326,6 +338,7 @@ export interface RootRouteChildren {
   StrategiesRoute: typeof StrategiesRoute
   StructureRoute: typeof StructureRoute
   SupportRoute: typeof SupportRoute
+  ApiTelemetryHeartbeatRoute: typeof ApiTelemetryHeartbeatRoute
   ApiPublicHooksManusWebhookRoute: typeof ApiPublicHooksManusWebhookRoute
   ApiPublicHooksResearchWeeklyRoute: typeof ApiPublicHooksResearchWeeklyRoute
   ApiPublicHooksRussiaSyncRoute: typeof ApiPublicHooksRussiaSyncRoute
@@ -467,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/telemetry/heartbeat': {
+      id: '/api/telemetry/heartbeat'
+      path: '/api/telemetry/heartbeat'
+      fullPath: '/api/telemetry/heartbeat'
+      preLoaderRoute: typeof ApiTelemetryHeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/manus-webhook': {
       id: '/api/public/hooks/manus-webhook'
       path: '/api/public/hooks/manus-webhook'
@@ -518,6 +538,7 @@ const rootRouteChildren: RootRouteChildren = {
   StrategiesRoute: StrategiesRoute,
   StructureRoute: StructureRoute,
   SupportRoute: SupportRoute,
+  ApiTelemetryHeartbeatRoute: ApiTelemetryHeartbeatRoute,
   ApiPublicHooksManusWebhookRoute: ApiPublicHooksManusWebhookRoute,
   ApiPublicHooksResearchWeeklyRoute: ApiPublicHooksResearchWeeklyRoute,
   ApiPublicHooksRussiaSyncRoute: ApiPublicHooksRussiaSyncRoute,
