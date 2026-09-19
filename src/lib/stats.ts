@@ -112,6 +112,20 @@ export function computeStats(history: Draw[], options: StatOptions = {}): StatLa
   const recent = chronological(history).slice(0, window);
   const sample = recent.length;
 
+  // With no observations there is no statistical evidence. Returning an
+  // empty layer prevents neutral priors and Monte Carlo noise from appearing
+  // as a live ranking on the Ensemble page.
+  if (sample === 0) {
+    return {
+      numbers: [],
+      byNumber: {},
+      pairs: [],
+      triplets: [],
+      entropy: { value: 0, max: Math.log2(49), ratio: 0 },
+      sample: 0,
+    };
+  }
+
   const counts = zero();
   const weighted = zero();
   const lastSeen: Record<number, number | null> = Object.fromEntries(

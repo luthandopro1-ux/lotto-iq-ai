@@ -231,20 +231,20 @@ export function buildEnsemble(
     return sum / 3;
   };
 
-  const formulaTriplets: EnsembleTriplet[] = prediction.rows.slice(0, 6).map((r) => {
-    const t = [r.banker.n, r.pair[1].n, r.bonus.n].sort((x, y) => x - y) as [
-      number,
-      number,
-      number,
-    ];
-    const score = tripletScore(t);
-    return {
-      triplet: t,
-      statScore: score,
-      source: "formula" as const,
-      classification: score >= 0.4 ? "CONFIRMED" : score >= 0.15 ? "SUPPORTED" : "FORMULA ONLY",
-    };
-  });
+  const formulaTriplets: EnsembleTriplet[] = prediction.rows
+    .slice(0, 6)
+    .map((r) => [r.banker.n, r.pair[1].n, r.bonus.n])
+    .filter((values) => new Set(values).size === 3)
+    .map((values) => {
+      const t = values.sort((x, y) => x - y) as [number, number, number];
+      const score = tripletScore(t);
+      return {
+        triplet: t,
+        statScore: score,
+        source: "formula" as const,
+        classification: score >= 0.4 ? "CONFIRMED" : score >= 0.15 ? "SUPPORTED" : "FORMULA ONLY",
+      };
+    });
   const statTriplets: EnsembleTriplet[] = stats.triplets.slice(0, 4).map((t) => ({
     triplet: t.triplet,
     statScore: t.score,
