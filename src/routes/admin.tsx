@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Panel } from "@/components/AppShell";
 import { SyncLog } from "@/components/SyncLog";
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
+import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -51,6 +54,18 @@ function AdminDashboard() {
   } = useQuery({
     queryKey: ["admin", "capacity"],
     queryFn: () => getCapacityMetrics(),
+    refetchInterval: 60_000,
+    enabled: isAdministrator,
+  });
+
+  const {
+    data: security,
+    isLoading: securityLoading,
+    error: securityError,
+    refetch: refetchSecurity,
+  } = useQuery({
+    queryKey: ["admin", "security"],
+    queryFn: () => getSecurityOverview(),
     refetchInterval: 60_000,
     enabled: isAdministrator,
   });
@@ -95,6 +110,10 @@ function AdminDashboard() {
     enabled: isAdministrator,
   });
 
+  const [targetUserId, setTargetUserId] = useState("");
+  const [accessReason, setAccessReason] = useState("");
+  const [accessActionPending, setAccessActionPending] = useState(false);
+
   if (accessLoading)
     return (
       <AppShell>
@@ -122,6 +141,23 @@ function AdminDashboard() {
   const activeEstimate = capacity?.current.active_users_estimate ?? 0;
   const capacityPercent = capacity?.current.capacity_percent ?? 0;
   const alertLevel = capacity?.current.alert_level ?? "normal";
+  const updateAccountAccess = async (status: "active" | "suspended" | "revoked") => {
+    setAccessActionPending(true);
+    try {
+      await setAccountAccess({
+        data: { userId: targetUserId.trim(), status, reason: accessReason },
+      });
+      toast.success(
+        status === "active" ? "Client access restored." : `Client access marked ${status}.`,
+      );
+      setAccessReason("");
+      await refetchSecurity();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Security action failed");
+    } finally {
+      setAccessActionPending(false);
+    }
+  };
 
   const stats = [
     {
@@ -147,14 +183,13 @@ function AdminDashboard() {
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold">Admin dashboard</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Monitor Lotto IQ data freshness, strategy configuration, ingestion runs, and prediction
-            ledger activity. Customer accounts and Premium billing are not part of this operator
-            view yet.
+            Monitor Lotto IQ data freshness, capacity, account activity, access controls, ingestion
+            runs, and prediction ledger activity.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 rounded-xl border border-border/70 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
           <LockKeyhole className="size-4 text-primary" />
-          Writes require the saved admin key
+          Protected administrator session
         </div>
       </div>
 
@@ -282,6 +317,154 @@ function AdminDashboard() {
         </div>
       </section>
 
+      <section className="mb-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            <ShieldCheck className="size-4" /> Security controls
+          </div>
+          <h2 className="mt-2 font-display text-2xl font-bold">Account access settings</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Suspend or revoke a client without seeing their password. The action is audited and
+            takes effect on the next protected request.
+          </p>
+          <label className="mt-5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Client user ID
+            <input
+              value={targetUserId}
+              onChange={(event) => setTargetUserId(event.target.value)}
+              placeholder="Supabase UUID"
+              className="mt-2 w-full rounded-xl border border-border bg-background/70 px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+            />
+          </label>
+          <label className="mt-4 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Reason
+            <textarea
+              value={accessReason}
+              onChange={(event) => setAccessReason(event.target.value)}
+              maxLength={240}
+              placeholder="Document the security or support reason"
+              className="mt-2 min-h-20 w-full rounded-xl border border-border bg-background/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+          </label>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              disabled={accessActionPending || !targetUserId.trim()}
+              onClick={() => void updateAccountAccess("suspended")}
+              className="rounded-xl border border-amber-400/30 px-3 py-2 text-xs font-semibold text-amber-300 disabled:opacity-50"
+            >
+              Suspend
+            </button>
+            <button
+              disabled={accessActionPending || !targetUserId.trim()}
+              onClick={() => void updateAccountAccess("revoked")}
+              className="rounded-xl border border-red-400/30 px-3 py-2 text-xs font-semibold text-red-300 disabled:opacity-50"
+            >
+              Revoke access
+            </button>
+            <button
+              disabled={accessActionPending || !targetUserId.trim()}
+              onClick={() => void updateAccountAccess("active")}
+              className="rounded-xl border border-emerald-400/30 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-50"
+            >
+              Restore
+            </button>
+          </div>
+          <p className="mt-4 text-[11px] leading-5 text-muted-foreground">
+            Password reset remains a Supabase Auth recovery flow. Administrators never receive or
+            store a client password.
+          </p>
+        </div>
+        <div className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            <Users className="size-4" /> Account and audit summary
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SecurityStat
+              label="Registered"
+              value={
+                securityLoading
+                  ? "…"
+                  : (security?.accounts.registered.toLocaleString("en-GB") ?? "—")
+              }
+            />
+            <SecurityStat
+              label="Confirmed"
+              value={
+                securityLoading
+                  ? "…"
+                  : (security?.accounts.confirmed.toLocaleString("en-GB") ?? "—")
+              }
+            />
+            <SecurityStat
+              label="New · 24h"
+              value={
+                securityLoading
+                  ? "…"
+                  : (security?.accounts.created_last_24h.toLocaleString("en-GB") ?? "—")
+              }
+            />
+            <SecurityStat
+              label="Controlled"
+              value={
+                securityLoading
+                  ? "…"
+                  : (security?.accounts.controlled.toLocaleString("en-GB") ?? "—")
+              }
+            />
+          </div>
+          {securityError && (
+            <p className="mt-4 text-xs text-amber-300">
+              Security overview is temporarily unavailable.
+            </p>
+          )}
+          <h3 className="mt-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Recent access controls
+          </h3>
+          <div className="mt-3 space-y-2">
+            {(security?.controls ?? []).slice(0, 6).map((control) => (
+              <div
+                key={control.user_id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2 text-xs"
+              >
+                <span className="min-w-0 truncate font-mono text-muted-foreground">
+                  {control.user_id}
+                </span>
+                <span
+                  className={
+                    control.status === "revoked"
+                      ? "text-red-300"
+                      : control.status === "suspended"
+                        ? "text-amber-300"
+                        : "text-emerald-300"
+                  }
+                >
+                  {control.status}
+                </span>
+              </div>
+            ))}
+            {!securityLoading && !security?.controls.length && (
+              <p className="text-sm text-muted-foreground">No suspended or revoked accounts.</p>
+            )}
+          </div>
+          <h3 className="mt-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Recent administrator actions
+          </h3>
+          <div className="mt-3 space-y-2">
+            {(security?.audit ?? []).slice(0, 5).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2 text-xs"
+              >
+                <span className="text-muted-foreground">{entry.action.replaceAll("_", " ")}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {new Date(entry.created_at).toLocaleString("en-GB")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <SyncPanel />
       <SyncLog />
 
@@ -355,9 +538,9 @@ function AdminDashboard() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-muted-foreground">
-        <strong className="text-amber-300">Security boundary:</strong> this dashboard uses the
-        repository’s existing shared <code>ADMIN_API_KEY</code> gate for mutation functions. It is
-        an operator control, not customer authentication or a Premium entitlement system.
+        <strong className="text-amber-300">Security boundary:</strong> password values are never
+        visible here. Account access changes require the administrator allowlist and are written to
+        the protected audit log.
       </div>
     </AppShell>
   );
@@ -380,6 +563,15 @@ function CapacityCard({
       <p className="mt-3 font-display text-2xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function SecurityStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/20 p-3">
+      <p className="font-display text-xl font-bold">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }

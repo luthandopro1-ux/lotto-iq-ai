@@ -7,7 +7,9 @@ import type { AccessContext, AccessRole } from "@/lib/access-types";
 // until generated Supabase types include the newer tables/functions.
 type MaybeSingleResult = Promise<{ data: Record<string, unknown> | null; error: Error | null }>;
 type AuthorizationDb = {
-  rpc: (fn: "is_administrator") => Promise<{ data: boolean | null; error: Error | null }>;
+  rpc: (
+    fn: "is_administrator" | "get_my_access_status",
+  ) => Promise<{ data: boolean | string | null; error: Error | null }>;
   from: (table: string) => {
     select: (columns: string) => {
       eq: (column: string, value: string) => { maybeSingle: () => MaybeSingleResult };
@@ -38,6 +40,14 @@ export async function resolveAccessContext(
   }
   if (adminCheck.data === true) {
     return { userId, role: "administrator", workspaceId: null, planCode: null, planStatus: null };
+  }
+
+  const accessStatus = await db.rpc("get_my_access_status");
+  if (accessStatus.error) {
+    throw new Error(`Failed to resolve account access status: ${accessStatus.error.message}`);
+  }
+  if (accessStatus.data === "revoked" || accessStatus.data === "suspended") {
+    throw new Error("This account is not permitted to access the application.");
   }
 
   const workspace = await db.from("workspaces").select("id").eq("owner_id", userId).maybeSingle();

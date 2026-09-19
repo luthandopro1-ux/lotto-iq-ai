@@ -11,9 +11,15 @@ function fakeSupabase(opts: {
   rpcError?: string;
   workspaceError?: string;
   entitlementError?: string;
+  accessStatus?: string;
+  accessStatusError?: string;
 }) {
   return {
     rpc: async (fn: string) => {
+      if (fn === "get_my_access_status") {
+        if (opts.accessStatusError) return { data: null, error: new Error(opts.accessStatusError) };
+        return { data: opts.accessStatus ?? "active", error: null };
+      }
       if (fn !== "is_administrator") throw new Error(`unexpected rpc: ${fn}`);
       if (opts.rpcError) return { data: null, error: new Error(opts.rpcError) };
       return { data: opts.isAdministrator ?? false, error: null };
@@ -106,6 +112,16 @@ describe("resolveAccessContext", () => {
   it("throws (fail-closed) when the administrator RPC errors", async () => {
     const supabase = fakeSupabase({ rpcError: "network down" });
     await expect(resolveAccessContext(supabase, "user-x")).rejects.toThrow(/administrator status/);
+  });
+
+  it("rejects suspended accounts before loading workspace data", async () => {
+    const supabase = fakeSupabase({ isAdministrator: false, accessStatus: "suspended" });
+    await expect(resolveAccessContext(supabase, "user-suspended")).rejects.toThrow(/not permitted/);
+  });
+
+  it("throws (fail-closed) when account status cannot be resolved", async () => {
+    const supabase = fakeSupabase({ isAdministrator: false, accessStatusError: "db down" });
+    await expect(resolveAccessContext(supabase, "user-x")).rejects.toThrow(/account access status/);
   });
 
   it("throws (fail-closed) when the workspace lookup errors", async () => {
