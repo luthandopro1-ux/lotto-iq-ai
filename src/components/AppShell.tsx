@@ -18,6 +18,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
 import { BrandMark } from "@/components/BrandMark";
+import { BrandCopyright } from "@/components/BrandCopyright";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -113,9 +114,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>
 
-      <footer className="mx-auto max-w-7xl px-4 pb-10 text-xs text-muted-foreground sm:px-6">
-        Lotto IQ AI analyses historical UK49 and Russian lottery results against strategies you
-        define. It does not predict outcomes — lottery draws are random.
+      <footer className="mx-auto max-w-7xl space-y-1 px-4 pb-10 text-xs text-muted-foreground sm:px-6">
+        <BrandCopyright />
+        <p>
+          Lotto IQ AI analyses historical UK49 and Russian lottery results against strategies you
+          define. It does not predict outcomes — lottery draws are random.
+        </p>
       </footer>
     </div>
   );

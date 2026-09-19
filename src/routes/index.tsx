@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { BrandCopyright } from "@/components/BrandCopyright";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -254,8 +255,7 @@ function LandingPage() {
 
       <footer className="mx-auto flex max-w-7xl flex-col gap-2 border-t border-border/60 px-5 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <span>
-          © {new Date().getFullYear()} Lum Tech Solutions. Lotto IQ AI, developed by Lum Tech
-          Solutions.
+          <BrandCopyright />
         </span>
         <span className="inline-flex flex-wrap items-center gap-3">
           <Link to="/privacy" className="hover:text-foreground">
