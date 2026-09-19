@@ -2,7 +2,6 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
   BarChart3,
-  BrainCircuit,
   CheckCircle2,
   Database,
   FlaskConical,
@@ -10,6 +9,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -64,9 +64,7 @@ function LandingPage() {
     <main className="min-h-screen overflow-hidden">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
-            <BrainCircuit className="size-5" />
-          </span>
+          <BrandMark className="size-10 rounded-2xl" />
           <span className="font-display text-lg font-bold tracking-tight">
             Lotto<span className="gradient-text">IQ</span> AI
           </span>

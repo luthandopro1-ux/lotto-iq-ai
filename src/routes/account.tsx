@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, BrainCircuit, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { supabase } from "@/integrations/supabase/client";
 import { ensurePersonalAccount } from "@/lib/account.functions";
 
@@ -61,9 +62,7 @@ function AccountPage() {
     <main className="min-h-screen px-5 py-8 sm:px-8">
       <header className="mx-auto flex max-w-5xl items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
-            <BrainCircuit className="size-5" />
-          </span>
+          <BrandMark className="size-10 rounded-2xl" />
           <span className="font-display text-lg font-bold tracking-tight">
             Lotto<span className="gradient-text">IQ</span> AI
           </span>

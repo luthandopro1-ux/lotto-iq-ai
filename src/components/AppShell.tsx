@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
+import { BrandMark } from "@/components/BrandMark";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -85,9 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
           <Link to="/dashboard" className="flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
-              <BrainCircuit className="size-5" />
-            </span>
+            <BrandMark className="size-9 rounded-xl" />
             <span className="font-display text-lg font-bold tracking-tight">
               Lotto<span className="gradient-text">IQ</span> AI
             </span>
