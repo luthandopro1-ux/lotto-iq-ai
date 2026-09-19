@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="iqGrad" x1="10%" y1="0%" x2="95%" y2="100%">
+      <stop offset="0%" stop-color="#00D1B2"/>
+      <stop offset="55%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="#0B1B33"/>
+  <rect x="52" y="58" width="24" height="84" rx="12" fill="#00D1B2"/>
+  <circle cx="132" cy="100" r="42.5" fill="none" stroke="url(#iqGrad)" stroke-width="25"/>
+  <path d="M 152 128 Q 168 140 160 158 Q 152 152 148 138 Z" fill="url(#iqGrad)"/>
+</svg>
