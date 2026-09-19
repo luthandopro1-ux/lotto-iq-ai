@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { BrandCopyright } from "@/components/BrandCopyright";
 import { supabase } from "@/integrations/supabase/client";
 import { ensurePersonalAccount } from "@/lib/account.functions";
 
@@ -166,6 +167,9 @@ function AccountPage() {
           </p>
         </div>
       </section>
+      <footer className="mx-auto mt-10 max-w-md text-center text-xs text-muted-foreground">
+        <BrandCopyright />
+      </footer>
     </main>
   );
 }

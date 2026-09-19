@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { BrandCopyright } from "@/components/BrandCopyright";
 
 export function PublicPageShell({
   title,
@@ -39,9 +40,9 @@ export function PublicPageShell({
         <h1 className="mt-4 font-display text-4xl font-bold sm:text-5xl">{title}</h1>
         <div className="mt-8 space-y-8 text-sm leading-7 text-muted-foreground">{children}</div>
       </article>
-      <footer className="mx-auto max-w-3xl border-t border-border/60 py-6 text-xs text-muted-foreground">
-        Lotto IQ AI is developed by Lum Tech Solutions. Lottery draws are random; analysis does not
-        guarantee outcomes.
+      <footer className="mx-auto max-w-3xl space-y-1 border-t border-border/60 py-6 text-xs text-muted-foreground">
+        <BrandCopyright />
+        <p>Lottery draws are random; analysis does not guarantee outcomes.</p>
       </footer>
     </main>
   );
