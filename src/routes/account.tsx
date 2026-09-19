@@ -144,12 +144,12 @@ function AccountPage() {
               <input
                 required
                 type="password"
-                minLength={6}
+                minLength={10}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
                 className="mt-1.5 w-full rounded-xl border border-border bg-background/70 px-3 py-2.5 outline-none focus:border-primary"
-                placeholder="At least 6 characters"
+                placeholder="At least 10 characters"
               />
             </label>
             <button

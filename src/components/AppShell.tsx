@@ -22,18 +22,7 @@ import { BrandCopyright } from "@/components/BrandCopyright";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/predictions", label: "Predictions", icon: Target },
-  { to: "/history", label: "Ledger", icon: ScrollText },
-  { to: "/draws", label: "Draws", icon: Database },
-  { to: "/strategies", label: "Strategies", icon: Library },
-  { to: "/analysis", label: "Analysis", icon: Sparkles },
-  { to: "/ensemble", label: "Ensemble", icon: BrainCircuit },
-  { to: "/structure", label: "Structure", icon: Compass },
-  { to: "/backtest", label: "Backtest", icon: History },
-  { to: "/russia", label: "Russia", icon: Globe },
-  { to: "/research", label: "Research", icon: Microscope },
   { to: "/premium", label: "Premium", icon: Crown },
-  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 function AdminKeyControl() {

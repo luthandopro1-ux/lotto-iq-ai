@@ -5,6 +5,7 @@ import { AppShell, Panel } from "@/components/AppShell";
 import { SyncLog } from "@/components/SyncLog";
 import { SyncPanel } from "@/components/SyncPanel";
 import { Activity, Database, Library, LockKeyhole, ShieldCheck, Target } from "lucide-react";
+import { getAccessContext } from "@/lib/customer.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -21,6 +22,16 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminDashboard() {
+  const {
+    data: access,
+    isLoading: accessLoading,
+    error: accessError,
+  } = useQuery({
+    queryKey: ["access-context"],
+    queryFn: () => getAccessContext(),
+  });
+  const isAdministrator = access?.role === "administrator";
+
   const { data: draws = [], isLoading: drawsLoading } = useQuery({
     queryKey: ["admin", "draws-count"],
     queryFn: async () => {
@@ -29,6 +40,7 @@ function AdminDashboard() {
       return data ?? [];
     },
     refetchInterval: 30_000,
+    enabled: isAdministrator,
   });
 
   const { data: strategies = [], isLoading: strategiesLoading } = useQuery({
@@ -42,6 +54,7 @@ function AdminDashboard() {
       return data ?? [];
     },
     refetchInterval: 30_000,
+    enabled: isAdministrator,
   });
 
   const { data: predictions = [] } = useQuery({
@@ -56,7 +69,30 @@ function AdminDashboard() {
       return data ?? [];
     },
     refetchInterval: 30_000,
+    enabled: isAdministrator,
   });
+
+  if (accessLoading)
+    return (
+      <AppShell>
+        <div className="py-20 text-center text-sm text-muted-foreground">
+          Checking administrator access…
+        </div>
+      </AppShell>
+    );
+  if (accessError || !isAdministrator)
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-lg py-20 text-center">
+          <LockKeyhole className="mx-auto size-10 text-destructive" />
+          <h1 className="mt-5 font-display text-2xl font-bold">Administrator access required</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            This is a protected operator console. Your customer account cannot read platform
+            operations or private strategy definitions.
+          </p>
+        </div>
+      </AppShell>
+    );
 
   const activeStrategies = strategies.filter((strategy) => strategy.enabled).length;
   const gradedPredictions = predictions.filter((prediction) => prediction.outcome != null).length;

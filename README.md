@@ -1,5 +1,7 @@
 # Lotto Insights AI
 
+Developed and maintained by **Lum Tech Solutions**.
+
 > **Deploying?** See [DEPLOY.md](./DEPLOY.md) for the Cloudflare Workers
 > deployment steps (build, secrets, sync scheduling, migrations).
 
