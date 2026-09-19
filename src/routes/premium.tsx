@@ -21,6 +21,8 @@ import {
   saveCustomerFormula,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
+import { getPricingContext } from "@/lib/pricing.functions";
+import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
@@ -48,6 +50,7 @@ function PremiumPage() {
     queryFn: () => getCustomerDashboard(),
     enabled: access.data?.role === "premium" || access.data?.role === "administrator",
   });
+  const pricing = useQuery({ queryKey: ["pricing-context"], queryFn: () => getPricingContext() });
 
   const saveFormula = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,6 +107,69 @@ function PremiumPage() {
           <ShieldCheck className="size-4" /> No advertisements
         </div>
       </header>
+
+      <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Premium access plans
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-bold">Choose your renewal period</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              All plans renew automatically until cancelled. South African Rand is the
+              source-of-truth billing currency.
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Country:{" "}
+            <span className="font-semibold text-foreground">
+              {pricing.data?.countryCode ?? "…"}
+            </span>
+            {pricing.data?.countrySource === "edge" ? " · detected at edge" : " · defaulted safely"}
+          </p>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {PREMIUM_PLANS.map((plan, index) => (
+            <div
+              key={plan.code}
+              className={`relative rounded-2xl border p-5 ${index === 1 ? "border-primary/45 bg-primary/10" : "border-border/60 bg-background/20"}`}
+            >
+              {index === 1 && (
+                <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
+                  Popular
+                </span>
+              )}
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {plan.label}
+              </p>
+              <p className="mt-3 font-display text-3xl font-bold">
+                {formatZar(plan.priceZarMinor)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {plan.intervalLabel} · auto-renewing
+              </p>
+              {plan.discountPercent > 0 && (
+                <p className="mt-3 inline-flex rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+                  {plan.discountPercent}% annual discount
+                </p>
+              )}
+              <button
+                disabled
+                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
+              >
+                <LockKeyhole className="size-3.5" /> Checkout pending provider
+              </button>
+            </div>
+          ))}
+        </div>
+        {pricing.data?.countryCode !== "ZA" && (
+          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+            <strong className="text-foreground">International visitor:</strong> prices are shown in
+            ZAR. Live exchange-rate conversion is not displayed until a verified FX or payment
+            provider is connected; no guessed local amount is shown.
+          </p>
+        )}
+      </section>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
