@@ -54,6 +54,27 @@ export type CustomerDashboard = {
     candidateDescription: false;
   };
 };
+export type PremiumCandidate = {
+  number: number;
+  score: number;
+  agreement: number;
+  strategies: string[];
+};
+export type PremiumWorkspace = {
+  formulaLimit: 5;
+  noAdvertisements: true;
+  banker: number | null;
+  prediction: {
+    targetDate: string;
+    targetSession: string;
+    status: string;
+    pool: number[];
+    ranking: number[];
+  } | null;
+  ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
+  wheel: Array<{ number: number; score: number; agreement: number }>;
+  candidateDescriptions: Array<{ number: number; rationale: string }>;
+};
 type QueryResult = { data: Row[] | Row | null; error: { message: string } | null };
 type QueryBuilder = Promise<QueryResult> & {
   select: (columns: string) => QueryBuilder;
@@ -63,15 +84,32 @@ type QueryBuilder = Promise<QueryResult> & {
   insert: (values: Row) => QueryBuilder;
   single: () => QueryBuilder;
 };
-type CustomerDb = {
-  from: (table: string) => QueryBuilder;
-};
+type CustomerDb = { from: (table: string) => QueryBuilder };
 
 function asNumberArray(value: unknown, max: number): number[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 49)
     .slice(0, max);
+}
+function asCandidates(value: unknown): PremiumCandidate[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 14).flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const number = Number(row["number"]);
+    if (!Number.isInteger(number) || number < 1 || number > 49) return [];
+    return [
+      {
+        number,
+        score: Number(row["score"] ?? 0),
+        agreement: Number(row["agreement"] ?? 0),
+        strategies: Array.isArray(row["strategies"])
+          ? row["strategies"].filter((s): s is string => typeof s === "string").slice(0, 5)
+          : [],
+      },
+    ];
+  });
 }
 
 function formulaLimit(role: string) {
@@ -86,7 +124,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
   .middleware([requireAccessContext])
   .handler(async ({ context }): Promise<CustomerDashboard> => {
     const { accessContext } = context;
-    if (!accessContext.workspaceId) {
+    if (!accessContext.workspaceId)
       return {
         role: accessContext.role,
         planCode: accessContext.planCode,
@@ -103,8 +141,6 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
           candidateDescription: false,
         },
       };
-    }
-
     const db = context.supabase as unknown as CustomerDb;
     const [
       { data: draws, error: drawsError },
@@ -131,7 +167,6 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
     if (predictionError)
       throw new Error(`Failed to load prediction summary: ${predictionError.message}`);
     if (formulasError) throw new Error(`Failed to load private formulas: ${formulasError.message}`);
-
     const drawRows: CustomerDraw[] = (Array.isArray(draws) ? draws : []).map((draw) => ({
       draw_date: String(draw["draw_date"]),
       session: String(draw["session"]),
@@ -148,14 +183,11 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
     const prediction = (predictionRows[0] ?? null) as Row | null;
     const rows = prediction ? asNumberArray(prediction["rows"], 7) : [];
     const pool = prediction ? asNumberArray(prediction["pool"], 14) : [];
-    const hotBalls = pool.slice(0, 5);
-    const coldBalls = pool.slice(-5);
-
     return {
       role: accessContext.role,
       planCode: accessContext.planCode ?? "free",
       formulaLimit: formulaLimit(accessContext.role),
-      formulas: formulaRows.map((formula: Row) => ({
+      formulas: formulaRows.map((formula) => ({
         id: String(formula["id"]),
         name: String(formula["name"]),
         expression: String(formula["expression"]),
@@ -171,8 +203,8 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
             banker: typeof prediction["banker"] === "number" ? prediction["banker"] : null,
             sevenBallRanking: rows,
             pool,
-            hotBalls,
-            coldBalls,
+            hotBalls: pool.slice(0, 5),
+            coldBalls: pool.slice(-5),
             status: String(prediction["status"] ?? "pending"),
           }
         : null,
@@ -238,14 +270,64 @@ export const saveCustomerFormula = createServerFn({ method: "POST" })
 
 export const getPremiumWorkspace = createServerFn({ method: "GET" })
   .middleware([requireAccessContext])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<PremiumWorkspace> => {
     if (context.accessContext.role !== "premium" && context.accessContext.role !== "administrator")
       throw new Error("Premium membership required.");
+    const db = context.supabase as unknown as CustomerDb;
+    const [
+      { data: predictions, error: predictionError },
+      { data: analyses, error: analysisError },
+    ] = await Promise.all([
+      db
+        .from("predictions")
+        .select("target_date,target_session,status,banker,pool,rows,generated_at")
+        .order("generated_at", { ascending: false })
+        .limit(1),
+      db
+        .from("analysis_runs")
+        .select("top_numbers,strategy_count,created_at")
+        .order("created_at", { ascending: false })
+        .limit(1),
+    ]);
+    if (predictionError)
+      throw new Error(`Failed to load Premium prediction: ${predictionError.message}`);
+    if (analysisError) throw new Error(`Failed to load Premium analysis: ${analysisError.message}`);
+    const prediction = Array.isArray(predictions) && predictions[0] ? predictions[0] : null;
+    const analysis = Array.isArray(analyses) && analyses[0] ? analyses[0] : null;
+    const candidates = asCandidates(analysis?.["top_numbers"]);
+    const pool = asNumberArray(prediction?.["pool"], 14);
+    const ranking = asNumberArray(prediction?.["rows"], 7);
     return {
-      banker: null,
-      ensemble: [],
-      wheel: [],
-      rankingCandidateDescription: null,
       formulaLimit: 5,
+      noAdvertisements: true,
+      banker: typeof prediction?.["banker"] === "number" ? prediction["banker"] : null,
+      prediction: prediction
+        ? {
+            targetDate: String(prediction["target_date"]),
+            targetSession: String(prediction["target_session"]),
+            status: String(prediction["status"] ?? "pending"),
+            pool,
+            ranking,
+          }
+        : null,
+      ensemble: analysis
+        ? {
+            candidates,
+            strategyCount: Number(analysis["strategy_count"] ?? 0),
+            createdAt: String(analysis["created_at"]),
+          }
+        : null,
+      wheel: candidates.slice(0, 10).map((candidate) => ({
+        number: candidate.number,
+        score: candidate.score,
+        agreement: candidate.agreement,
+      })),
+      candidateDescriptions: candidates.slice(0, 7).map((candidate) => ({
+        number: candidate.number,
+        rationale:
+          candidate.agreement > 0
+            ? `${candidate.agreement} strategy signals agree on this candidate.`
+            : "Candidate retained in the latest stored analysis snapshot.",
+      })),
     };
   });
