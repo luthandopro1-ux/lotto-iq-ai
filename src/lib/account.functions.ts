@@ -4,23 +4,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // The account tables are introduced by the paired Supabase migration. Keep the
 // client query surface narrow until generated Supabase types include them.
-type AccountRow = Record<string, unknown>;
 type AccountDb = {
-  from: (table: string) => {
-    upsert: (
-      values: AccountRow,
-      options?: { onConflict?: string },
-    ) => Promise<{ error: Error | null }>;
-    insert: (values: AccountRow) => Promise<{ error: Error | null }>;
-    select: (columns: string) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => {
-        maybeSingle: () => Promise<{ data: AccountRow | null; error: Error | null }>;
-      };
-    };
-  };
+  rpc: (
+    fn: "bootstrap_personal_account",
+    args: { p_display_name?: string | null },
+  ) => Promise<{
+    data: { user_id: string; workspace_id: string; workspace_name: string }[] | null;
+    error: Error | null;
+  }>;
 };
 
 export const ensurePersonalAccount = createServerFn({ method: "POST" })
@@ -30,77 +21,19 @@ export const ensurePersonalAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as AccountDb;
-    const userId = context.userId;
+    const result = await db.rpc("bootstrap_personal_account", {
+      p_display_name: data.displayName?.trim() || null,
+    });
 
-    const profileResult = await db
-      .from("profiles")
-      .upsert(
-        { id: userId, ...(data.displayName ? { display_name: data.displayName } : {}) },
-        { onConflict: "id" },
-      );
-    if (profileResult.error) throw new Error(profileResult.error.message);
-
-    const existing = await db
-      .from("workspaces")
-      .select("id,name,owner_id,created_at,updated_at")
-      .eq("owner_id", userId)
-      .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
-
-    let workspace = existing.data;
-    if (!workspace) {
-      const created = await db.from("workspaces").insert({
-        name: "My Lotto IQ workspace",
-        owner_id: userId,
-      });
-      if (created.error) throw new Error(created.error.message);
-
-      const reloaded = await db
-        .from("workspaces")
-        .select("id,name,owner_id,created_at,updated_at")
-        .eq("owner_id", userId)
-        .maybeSingle();
-      if (reloaded.error || !reloaded.data) {
-        throw new Error(reloaded.error?.message ?? "Workspace was not created");
-      }
-      workspace = reloaded.data;
-    }
-
-    const membership = await db
-      .from("workspace_members")
-      .upsert(
-        { workspace_id: String(workspace["id"]), user_id: userId, role: "owner" },
-        { onConflict: "workspace_id,user_id" },
-      );
-    if (membership.error) throw new Error(membership.error.message);
-
-    const settings = await db.from("workspace_settings").upsert(
-      {
-        workspace_id: String(workspace["id"]),
-        game_code: "UK49",
-        timezone: "Africa/Johannesburg",
-      },
-      { onConflict: "workspace_id" },
-    );
-    if (settings.error) throw new Error(settings.error.message);
-
-    const entitlement = await db.from("workspace_entitlements").upsert(
-      {
-        workspace_id: String(workspace["id"]),
-        plan_code: "free",
-        status: "active",
-        source: "system",
-        feature_limits: { saved_strategies: 3, backtest_days: 90, history_depth: 200 },
-      },
-      { onConflict: "workspace_id" },
-    );
-    if (entitlement.error) throw new Error(entitlement.error.message);
+    if (result.error) throw new Error(result.error.message);
+    const workspace = result.data?.[0];
+    if (!workspace) throw new Error("Workspace was not created");
 
     return {
-      userId,
+      userId: workspace.user_id,
       workspace: {
-        id: String(workspace["id"]),
-        name: String(workspace["name"] ?? "My Lotto IQ workspace"),
+        id: workspace.workspace_id,
+        name: workspace.workspace_name,
       },
     };
   });
