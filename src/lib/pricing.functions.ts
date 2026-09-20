@@ -23,3 +23,25 @@ export const getPricingContext = createServerFn({ method: "GET" }).handler(
     };
   },
 );
+
+export type EarlyBirdStatus = { limit: number; claimed: number; remaining: number };
+
+// Narrow RPC surface for get_early_bird_status -- not in the generated
+// Supabase types (predates this migration, same reason authorization.server.ts
+// and daily.server.ts declare their own narrow types for their RPCs).
+type EarlyBirdStatusDb = {
+  rpc: (
+    fn: "get_early_bird_status",
+  ) => Promise<{ data: EarlyBirdStatus | null; error: { message: string } | null }>;
+};
+
+/** Public: how many early-bird Premium slots remain, out of 1,000. No auth required. */
+export const getEarlyBirdStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<EarlyBirdStatus> => {
+    const { serverDb } = await import("@/lib/db.server");
+    const db = serverDb() as unknown as EarlyBirdStatusDb;
+    const { data, error } = await db.rpc("get_early_bird_status");
+    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000 };
+    return data;
+  },
+);
