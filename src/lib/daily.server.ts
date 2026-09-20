@@ -14,6 +14,28 @@ import {
 import type { CatchUpReport, MissingSlot } from "@/lib/ingest.server";
 import type { Grading, PickedNumber, PredictionRow } from "@/lib/predict";
 
+// Narrow RPC surface for upsert_strategy_predictions. Not in the
+// generated Supabase types (src/integrations/supabase/types.ts) because
+// that file is a snapshot from before this migration existed and hasn't
+// been regenerated since — same reason authorization.server.ts declares
+// its own narrow type for the is_administrator RPC rather than using
+// the full generated Database type for that call.
+type StrategyPredictionsRpc = {
+  rpc: (
+    fn: "upsert_strategy_predictions",
+    args: {
+      p_draw_id: string;
+      p_draw_time: string;
+      p_predictions: Array<{
+        strategy_id: string;
+        predicted_numbers: number[];
+        predicted_banker: number | null;
+        predicted_bonus: number | null;
+      }>;
+    },
+  ) => Promise<{ error: { message: string } | null }>;
+};
+
 export interface LedgerRecord {
   id: string;
   drawId: string;
@@ -206,6 +228,35 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       .single();
     if (updated) Object.assign(p, updated);
     gradedNow += 1;
+
+    try {
+      const { latestAnalysisSnapshot } = await import("@/lib/analysis.server");
+      const snapshot = await latestAnalysisSnapshot(
+        db,
+        p.target_date,
+        p.target_session as SessionKey,
+      );
+      if (snapshot && snapshot.breakdown.length > 0) {
+        const { error: spError } = await (db as unknown as StrategyPredictionsRpc).rpc(
+          "upsert_strategy_predictions",
+          {
+            p_draw_id: draw.id,
+            p_draw_time: SESSION_SCHEDULE[p.target_session as SessionKey].ukTime,
+            p_predictions: snapshot.breakdown.map((b) => ({
+              strategy_id: b.strategyId,
+              predicted_numbers: b.numbers,
+              predicted_banker: null,
+              predicted_bonus: null,
+            })),
+          },
+        );
+        if (spError) syncErrors.push(`strategy_predictions not saved: ${spError.message}`);
+      }
+    } catch (err) {
+      syncErrors.push(
+        `strategy_predictions not saved: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   /* ---- 4. learn --------------------------------------------------- */
