@@ -23,6 +23,7 @@ import {
 import { getAccessContext } from "@/lib/customer.functions";
 import { getPricingContext } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
@@ -39,7 +40,20 @@ function PremiumPage() {
   const [formulaName, setFormulaName] = useState("");
   const [formulaExpression, setFormulaExpression] = useState("");
   const [saving, setSaving] = useState(false);
-  const access = useQuery({ queryKey: ["access-context"], queryFn: () => getAccessContext() });
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
+  const access = useQuery({
+    queryKey: ["access-context"],
+    queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
+  });
   const premium = useQuery({
     queryKey: ["premium-workspace"],
     queryFn: () => getPremiumWorkspace(),
@@ -68,20 +82,30 @@ function PremiumPage() {
     }
   };
 
-  if (access.isLoading)
+  if (session.isLoading || (session.data && access.isLoading))
     return (
       <PageShell>
         <LoadingState />
       </PageShell>
     );
+  if (session.error || access.error)
+    return (
+      <PageShell>
+        <UpgradeState
+          signedIn={Boolean(session.data)}
+          title="Premium access could not be verified"
+          detail="Refresh the page or return to secure account access before trying again."
+        />
+      </PageShell>
+    );
   if (
-    access.error ||
+    !session.data ||
     !access.data ||
     (access.data.role !== "premium" && access.data.role !== "administrator")
   )
     return (
       <PageShell>
-        <UpgradeState signedIn={Boolean(access.data)} />
+        <UpgradeState signedIn={Boolean(session.data)} />
       </PageShell>
     );
   const workspace = premium.data;
@@ -385,15 +409,24 @@ function LoadingState() {
     </div>
   );
 }
-function UpgradeState({ signedIn }: { signedIn: boolean }) {
+function UpgradeState({
+  signedIn,
+  title = "Premium workspace access",
+  detail,
+}: {
+  signedIn: boolean;
+  title?: string;
+  detail?: string;
+}) {
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-primary/20 bg-primary/10 p-8 text-center sm:p-12">
       <LockKeyhole className="mx-auto size-10 text-primary" />
-      <h1 className="mt-5 font-display text-3xl font-bold">Premium workspace access</h1>
+      <h1 className="mt-5 font-display text-3xl font-bold">{title}</h1>
       <p className="mt-3 leading-7 text-muted-foreground">
-        {signedIn
-          ? "Your account is currently on the Free plan. Premium analysis becomes available after a verified entitlement is active."
-          : "Sign in to view your membership and Premium access state."}
+        {detail ??
+          (signedIn
+            ? "Your account is currently on the Free plan. Premium analysis becomes available after a verified entitlement is active."
+            : "Sign in to view your membership and Premium access state.")}
       </p>
       <Link
         to={signedIn ? "/premium" : "/account"}
