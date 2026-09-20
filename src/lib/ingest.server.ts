@@ -125,7 +125,7 @@ async function withRetry<T>(fn: () => Promise<T>, onRetry: () => void): Promise<
  * Every run is journalled in `ingest_runs` so the dashboard can show sync health.
  */
 export async function runIngest(options: IngestOptions): Promise<IngestSummary> {
-  const db = serverDb();
+  const db = serverDb(true);
   const provider = getProvider(options.providerId);
   const sessions = (options.sessions?.length ? options.sessions : provider.sessions).filter((s) =>
     provider.sessions.includes(s),
@@ -237,7 +237,7 @@ export interface GapReport {
 
 /** Find dates with no stored draw between the first and last record we hold. */
 export async function findGaps(limitPerSession = 60): Promise<GapReport[]> {
-  const db = serverDb();
+  const db = serverDb(true);
   const reports: GapReport[] = [];
 
   for (const session of SESSIONS) {
@@ -284,7 +284,7 @@ export interface MissingSlot {
  * Only slots whose draw time has already passed are considered.
  */
 export async function missingSlots(days = 4, now = new Date()): Promise<MissingSlot[]> {
-  const db = serverDb();
+  const db = serverDb(true);
   const from = new Date(`${ukDate(now)}T00:00:00Z`);
   from.setUTCDate(from.getUTCDate() - days);
   const fromDate = from.toISOString().slice(0, 10);
