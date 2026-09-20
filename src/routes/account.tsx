@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { BrandCopyright } from "@/components/BrandCopyright";
 import { supabase } from "@/integrations/supabase/client";
 import { ensurePersonalAccount } from "@/lib/account.functions";
+import { getAccessContext } from "@/lib/customer.functions";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -67,6 +68,13 @@ function AccountPage() {
       if (result.error) throw result.error;
       if (!result.data.session) {
         toast.success("Account created. Check your email to confirm access, then sign in.");
+        return;
+      }
+
+      const access = await getAccessContext();
+      if (access.role === "administrator") {
+        toast.success("Administrator access confirmed.");
+        await navigate({ to: "/admin" });
         return;
       }
 
