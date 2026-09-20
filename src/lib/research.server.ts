@@ -65,7 +65,7 @@ OUTPUT FORMAT: end your final message with a JSON object (only JSON, no other te
 }`;
 }
 
-export async function startWeeklyResearch(db: Db): Promise<{ id: string; taskId: string }> {
+export async function startResearchRun(db: Db): Promise<{ id: string; taskId: string }> {
   const snapshot = await gatherOurModelSnapshot(db);
   const prompt = buildPrompt(snapshot);
 

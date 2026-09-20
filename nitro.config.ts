@@ -14,9 +14,11 @@ export default {
     // tighter 20-second Supabase pg_cron tick; if that one is ever
     // misconfigured or paused, draws still land within ~60s here.
     "*/1 * * * *": ["uk49:sync-tick"],
-    // Monday 06:00 UTC — matches the Supabase-side schedule this
-    // replaces. This is now the only place the weekly research job is
-    // triggered from; no Supabase Vault secrets needed for it anymore.
-    "0 6 * * 1": ["research:weekly"],
+    // Monday, Wednesday, Friday 06:00 UTC. This is the only place the
+    // research job is triggered from; no Supabase Vault secrets needed
+    // (a Supabase pg_cron version of this was scoped in an earlier
+    // migration but never applied to the database — this Cloudflare-
+    // native task is the sole trigger path, not a redundant second one).
+    "0 6 * * 1,3,5": ["research:tick"],
   },
 };
