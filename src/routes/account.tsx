@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
@@ -22,16 +22,39 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "reset">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [pending, setPending] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+
+  useEffect(() => {
+    setRecoveryMode(new URLSearchParams(window.location.search).get("recovery") === "1");
+  }, []);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPending(true);
     try {
+      if (mode === "reset") {
+        if (recoveryMode) {
+          const result = await supabase.auth.updateUser({ password });
+          if (result.error) throw result.error;
+          toast.success("Password updated. You can now sign in.");
+          setRecoveryMode(false);
+          setMode("sign-in");
+          setPassword("");
+          return;
+        }
+        const result = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/account?recovery=1`,
+        });
+        if (result.error) throw result.error;
+        toast.success("If the account exists, a password reset email has been sent.");
+        return;
+      }
+
       const result =
         mode === "sign-up"
           ? await supabase.auth.signUp({
@@ -102,14 +125,18 @@ function AccountPage() {
 
         <div className="glass rounded-3xl p-6 sm:p-8">
           <div className="mb-6 flex gap-1 rounded-xl bg-secondary/60 p-1">
-            {(["sign-in", "sign-up"] as const).map((tab) => (
+            {(["sign-in", "sign-up", "reset"] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setMode(tab)}
                 className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${mode === tab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {tab === "sign-in" ? "Sign in" : "Create account"}
+                {tab === "sign-in"
+                  ? "Sign in"
+                  : tab === "sign-up"
+                    ? "Create account"
+                    : "Reset password"}
               </button>
             ))}
           </div>
@@ -139,25 +166,33 @@ function AccountPage() {
                 placeholder="you@example.com"
               />
             </label>
-            <label className="block text-sm">
-              Password{" "}
-              <input
-                required
-                type="password"
-                minLength={6}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-                className="mt-1.5 w-full rounded-xl border border-border bg-background/70 px-3 py-2.5 outline-none focus:border-primary"
-                placeholder="At least 6 characters"
-              />
-            </label>
+            {(mode !== "reset" || recoveryMode) && (
+              <label className="block text-sm">
+                Password{" "}
+                <input
+                  required
+                  type="password"
+                  minLength={10}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                  className="mt-1.5 w-full rounded-xl border border-border bg-background/70 px-3 py-2.5 outline-none focus:border-primary"
+                  placeholder="At least 10 characters"
+                />
+              </label>
+            )}
             <button
               disabled={pending}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending && <Loader2 className="size-4 animate-spin" />}
-              {mode === "sign-in" ? "Sign in to Lotto IQ" : "Create my workspace"}
+              {mode === "sign-in"
+                ? "Sign in to Lotto IQ"
+                : mode === "sign-up"
+                  ? "Create my workspace"
+                  : recoveryMode
+                    ? "Update password"
+                    : "Send reset email"}
               <ArrowRight className="size-4" />
             </button>
           </form>
