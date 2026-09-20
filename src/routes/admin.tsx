@@ -21,6 +21,7 @@ import {
 import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
 import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
+import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -123,6 +124,17 @@ function AdminDashboard() {
   const [targetUserId, setTargetUserId] = useState("");
   const [accessReason, setAccessReason] = useState("");
   const [accessActionPending, setAccessActionPending] = useState(false);
+  const [researchPending, setResearchPending] = useState(false);
+
+  const {
+    data: researchReports = [],
+    isLoading: researchLoading,
+    refetch: refetchResearch,
+  } = useQuery({
+    queryKey: ["research-reports"],
+    queryFn: () => listResearchReportsFn(),
+    enabled: isAdministrator,
+  });
 
   if (session.isLoading || (session.data && accessLoading))
     return (
@@ -179,6 +191,19 @@ function AdminDashboard() {
       toast.error(error instanceof Error ? error.message : "Security action failed");
     } finally {
       setAccessActionPending(false);
+    }
+  };
+
+  const runResearchNow = async () => {
+    setResearchPending(true);
+    try {
+      await triggerResearchNow();
+      toast.success("Research run started.");
+      await refetchResearch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Research trigger failed");
+    } finally {
+      setResearchPending(false);
     }
   };
 
@@ -559,6 +584,52 @@ function AdminDashboard() {
           </div>
         </Panel>
       </div>
+
+      <Panel
+        title="Manus research"
+        className="mt-6"
+        action={
+          <button
+            onClick={runResearchNow}
+            disabled={researchPending}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            {researchPending ? "Starting…" : "Run now"}
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          {researchLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {researchReports.map((report: Record<string, unknown>) => (
+            <div key={String(report["id"])} className="rounded-xl border border-border/70 p-3">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-mono text-muted-foreground">
+                  {new Date(String(report["created_at"])).toLocaleString("en-GB")}
+                </span>
+                <span
+                  className={
+                    report["status"] === "completed"
+                      ? "text-emerald-400"
+                      : report["status"] === "failed"
+                        ? "text-red-400"
+                        : "text-amber-400"
+                  }
+                >
+                  {String(report["status"])}
+                </span>
+              </div>
+              {typeof report["error"] === "string" && report["error"] && (
+                <p className="mt-1 text-[11px] text-red-400">{report["error"]}</p>
+              )}
+            </div>
+          ))}
+          {!researchLoading && researchReports.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No research runs yet — use "Run now" to start one.
+            </p>
+          )}
+        </div>
+      </Panel>
 
       <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-muted-foreground">
         <strong className="text-amber-300">Security boundary:</strong> password values are never
