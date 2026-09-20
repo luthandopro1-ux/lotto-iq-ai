@@ -108,12 +108,10 @@ npx supabase db push
 ## Local development
 
 ```bash
-npm run dev          # vite dev server, Node runtime — not the Worker
-npm run preview       # preview the Vite build, still Node
+npm run dev          # vite dev server for UI iteration
+npm run preview      # build and run the generated Cloudflare Worker locally
 ```
 
-`npm run dev`/`preview` are for iterating on the UI — they don't run
-inside `workerd`, so anything that depends on Cloudflare-specific
-behavior should be verified with a real `npm run deploy` (or `wrangler
-dev --config .output/server/wrangler.json` after building) before
-relying on it in production.
+`npm run dev` is for UI iteration. `npm run preview` runs the generated
+Cloudflare Worker through Wrangler, so it is the preferred local smoke test
+for server functions, route guards, bindings, and scheduled-task wiring.

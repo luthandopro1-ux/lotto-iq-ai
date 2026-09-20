@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Activity,
   CalendarDays,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { AppShell, Ball, Panel } from "@/components/AppShell";
 import { getCustomerDashboard, type CustomerDashboard } from "@/lib/customer.functions";
+import { getAccessContext } from "@/lib/customer.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -50,11 +53,32 @@ function numbers(draw: DrawRow) {
 }
 
 function ClientDashboard() {
+  const navigate = useNavigate();
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
+  const access = useQuery({
+    queryKey: ["access-context"],
+    queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
+  });
   const { data, isLoading, error } = useQuery({
     queryKey: ["customer-dashboard"],
     queryFn: () => getCustomerDashboard(),
+    enabled: Boolean(access.data) && access.data?.role !== "administrator",
   });
-  if (isLoading)
+
+  useEffect(() => {
+    if (access.data?.role === "administrator") void navigate({ to: "/admin", replace: true });
+  }, [access.data?.role, navigate]);
+
+  if (session.isLoading || (session.data && access.isLoading) || (access.data && isLoading))
     return (
       <AppShell>
         <div className="space-y-5">
@@ -67,6 +91,25 @@ function ClientDashboard() {
         </div>
       </AppShell>
     );
+  if (session.error || access.error)
+    return (
+      <AppShell>
+        <AccessState
+          title="We could not verify your session"
+          detail="Refresh the page and sign in again to continue."
+        />
+      </AppShell>
+    );
+  if (!session.data)
+    return (
+      <AppShell>
+        <AccessState
+          title="Sign in to your client workspace"
+          detail="Your private dashboard is available after secure account authentication."
+        />
+      </AppShell>
+    );
+  if (access.data?.role === "administrator") return null;
   if (error)
     return (
       <AppShell>
@@ -95,6 +138,22 @@ function ClientDashboard() {
       </AppShell>
     );
   return <DashboardContent data={data} />;
+}
+
+function AccessState({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="mx-auto max-w-lg py-20 text-center">
+      <LockKeyhole className="mx-auto size-10 text-primary" />
+      <h1 className="mt-5 font-display text-2xl font-bold">{title}</h1>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{detail}</p>
+      <Link
+        to="/account"
+        className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+      >
+        Open secure account access
+      </Link>
+    </div>
+  );
 }
 
 function DashboardContent({ data }: { data: DashboardData }) {

@@ -11,6 +11,7 @@ import {
   Compass,
   Globe,
   KeyRound,
+  UserRound,
   Microscope,
   ShieldCheck,
   Crown,
@@ -23,6 +24,7 @@ import { BrandCopyright } from "@/components/BrandCopyright";
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/premium", label: "Premium", icon: Crown },
+  { to: "/account", label: "Account", icon: UserRound },
 ] as const;
 
 function AdminKeyControl() {

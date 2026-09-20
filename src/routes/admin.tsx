@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -37,6 +37,15 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminDashboard() {
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
   const {
     data: access,
     isLoading: accessLoading,
@@ -44,6 +53,7 @@ function AdminDashboard() {
   } = useQuery({
     queryKey: ["access-context"],
     queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
   });
   const isAdministrator = access?.role === "administrator";
 
@@ -114,7 +124,7 @@ function AdminDashboard() {
   const [accessReason, setAccessReason] = useState("");
   const [accessActionPending, setAccessActionPending] = useState(false);
 
-  if (accessLoading)
+  if (session.isLoading || (session.data && accessLoading))
     return (
       <AppShell>
         <div className="py-20 text-center text-sm text-muted-foreground">
@@ -122,16 +132,29 @@ function AdminDashboard() {
         </div>
       </AppShell>
     );
-  if (accessError || !isAdministrator)
+  if (session.error || accessError || !session.data || !isAdministrator)
     return (
       <AppShell>
         <div className="mx-auto max-w-lg py-20 text-center">
           <LockKeyhole className="mx-auto size-10 text-destructive" />
-          <h1 className="mt-5 font-display text-2xl font-bold">Administrator access required</h1>
+          <h1 className="mt-5 font-display text-2xl font-bold">
+            {session.error || accessError
+              ? "Administrator access could not be verified"
+              : "Administrator access required"}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            This is a protected operator console. Your customer account cannot read platform
-            operations or private strategy definitions.
+            {session.data
+              ? "This is a protected operator console. Your customer account cannot read platform operations or private strategy definitions."
+              : "Sign in with an allowlisted administrator account to open the Lum Tech Solutions operator console."}
           </p>
+          {!session.data && (
+            <Link
+              to="/account"
+              className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Open secure account access
+            </Link>
+          )}
         </div>
       </AppShell>
     );
