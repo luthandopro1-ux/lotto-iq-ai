@@ -19,9 +19,10 @@ import {
   getCustomerDashboard,
   getPremiumWorkspace,
   saveCustomerFormula,
+  claimEarlyBirdPremium,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
-import { getPricingContext } from "@/lib/pricing.functions";
+import { getPricingContext, getEarlyBirdStatus } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -435,6 +436,62 @@ function UpgradeState({
         {signedIn ? "Refresh membership" : "Sign in or create account"}{" "}
         <ArrowRight className="size-4" />
       </Link>
+      {signedIn && <EarlyBirdClaim />}
+    </div>
+  );
+}
+
+function EarlyBirdClaim() {
+  const queryClient = useQueryClient();
+  const [claiming, setClaiming] = useState(false);
+  const status = useQuery({
+    queryKey: ["early-bird-status"],
+    queryFn: () => getEarlyBirdStatus(),
+  });
+
+  const claim = async () => {
+    setClaiming(true);
+    try {
+      const result = await claimEarlyBirdPremium();
+      if (result.alreadyClaimed) {
+        toast.success("You already claimed early-bird Premium.");
+      } else {
+        toast.success("Early-bird Premium claimed — welcome aboard!");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["access-context"] });
+      await queryClient.invalidateQueries({ queryKey: ["early-bird-status"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not claim early-bird Premium");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  if (status.isLoading) return null;
+  const remaining = status.data?.remaining ?? 0;
+  if (remaining <= 0) return null;
+
+  return (
+    <div className="mt-8 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-5 text-left">
+      <div className="flex items-center gap-2 text-emerald-300">
+        <Sparkles className="size-4" />
+        <p className="text-xs font-bold uppercase tracking-widest">Early-bird — 100% off</p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        The first 1,000 clients get full Premium access at no cost, to help test the software before
+        billing goes live. No card, no checkout — one click.
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">{remaining}</span> of{" "}
+        {status.data?.limit ?? 1000} spots remaining
+      </p>
+      <button
+        onClick={claim}
+        disabled={claiming}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 disabled:opacity-60"
+      >
+        {claiming ? "Claiming…" : "Claim free Premium"}
+      </button>
     </div>
   );
 }

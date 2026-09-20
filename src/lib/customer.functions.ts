@@ -331,3 +331,31 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
       })),
     };
   });
+
+// Narrow RPC surface for claim_early_bird_premium -- not in the
+// generated Supabase types (predates this migration), same reasoning
+// as the other narrow RPC types in this codebase.
+type EarlyBirdClaimDb = {
+  rpc: (fn: "claim_early_bird_premium") => Promise<{
+    data: { already_claimed: boolean; claimed: boolean } | null;
+    error: { message: string } | null;
+  }>;
+};
+
+/**
+ * Claims one of the first 1,000 early-bird Premium slots for the caller's
+ * own workspace, if any remain. No billing provider is connected yet
+ * (see premium.tsx), so this is an honest direct entitlement grant --
+ * not a discount applied through checkout, since there is no checkout.
+ * Idempotent: calling it again after a successful claim just returns
+ * already_claimed: true.
+ */
+export const claimEarlyBirdPremium = createServerFn({ method: "POST" })
+  .middleware([requireAccessContext])
+  .handler(async ({ context }): Promise<{ alreadyClaimed: boolean; claimed: boolean }> => {
+    const { data, error } = await (context.supabase as unknown as EarlyBirdClaimDb).rpc(
+      "claim_early_bird_premium",
+    );
+    if (error) throw new Error(error.message);
+    return { alreadyClaimed: data?.already_claimed ?? false, claimed: data?.claimed ?? false };
+  });
