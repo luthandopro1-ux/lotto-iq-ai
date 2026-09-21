@@ -6,6 +6,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // client query surface narrow until generated Supabase types include them.
 type AccountRow = Record<string, unknown>;
 type AccountDb = {
+  rpc: (
+    fn: "claim_beta_access",
+    args: { p_workspace_id: string },
+  ) => Promise<{ data: unknown; error: Error | null }>;
   from: (table: string) => {
     upsert: (
       values: AccountRow,
@@ -95,6 +99,11 @@ export const ensurePersonalAccount = createServerFn({ method: "POST" })
       { onConflict: "workspace_id" },
     );
     if (entitlement.error) throw new Error(entitlement.error.message);
+
+    const beta = await db.rpc("claim_beta_access", {
+      p_workspace_id: String(workspace["id"]),
+    });
+    if (beta.error) throw new Error(`Beta registration failed: ${beta.error.message}`);
 
     return {
       userId,

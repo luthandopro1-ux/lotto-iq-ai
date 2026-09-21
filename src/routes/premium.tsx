@@ -21,7 +21,7 @@ import {
   saveCustomerFormula,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
-import { getPricingContext } from "@/lib/pricing.functions";
+import { getBetaStatus, getPricingContext } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
 
 export const Route = createFileRoute("/premium")({
@@ -51,6 +51,7 @@ function PremiumPage() {
     enabled: access.data?.role === "premium" || access.data?.role === "administrator",
   });
   const pricing = useQuery({ queryKey: ["pricing-context"], queryFn: () => getPricingContext() });
+  const beta = useQuery({ queryKey: ["beta-status"], queryFn: () => getBetaStatus() });
 
   const saveFormula = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,6 +109,34 @@ function PremiumPage() {
         </div>
       </header>
 
+      {beta.data?.enabled && (
+        <section className="mb-6 rounded-3xl border border-amber-300/30 bg-amber-300/10 p-5 sm:p-6">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">
+                {beta.data.label}
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-amber-50">
+                100% free during the beta period
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-100/75">
+                Early Bird registration gives approved beta members access to the Premium workspace
+                for testing. Prices remain visible for the future paid launch; no payment is taken
+                during beta.
+              </p>
+            </div>
+            <div className="shrink-0 rounded-2xl border border-amber-200/20 bg-black/10 px-4 py-3 text-xs text-amber-100/80">
+              <strong className="text-amber-50">
+                {beta.data.registered_workspaces.toLocaleString()} /{" "}
+                {beta.data.max_workspaces.toLocaleString()}
+              </strong>
+              <br />
+              beta workspaces registered
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -155,9 +184,9 @@ function PremiumPage() {
               )}
               <button
                 disabled
-                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
+                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2.5 text-xs font-semibold text-amber-100/70"
               >
-                <LockKeyhole className="size-3.5" /> Checkout pending provider
+                <Check className="size-3.5" /> Free during Early Bird Beta
               </button>
             </div>
           ))}

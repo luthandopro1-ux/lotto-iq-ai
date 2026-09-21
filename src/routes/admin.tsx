@@ -21,6 +21,7 @@ import {
 import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
 import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
+import { getBetaStatus } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -78,6 +79,13 @@ function AdminDashboard() {
       return data ?? [];
     },
     refetchInterval: 30_000,
+    enabled: isAdministrator,
+  });
+
+  const { data: beta } = useQuery({
+    queryKey: ["admin", "beta-status"],
+    queryFn: () => getBetaStatus(),
+    refetchInterval: 60_000,
     enabled: isAdministrator,
   });
 
@@ -192,6 +200,31 @@ function AdminDashboard() {
           Protected administrator session
         </div>
       </div>
+
+      {beta?.enabled && (
+        <section className="mb-6 rounded-3xl border border-amber-300/25 bg-amber-300/10 p-5 sm:p-6">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">
+                {beta.label}
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-amber-50">
+                Beta registration capacity
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-amber-100/75">
+                The count is allocated atomically by the database. It is not a frontend-only limit.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-amber-200/20 bg-black/10 px-5 py-3 text-right">
+              <p className="font-display text-2xl font-bold text-amber-50">
+                {beta.registered_workspaces.toLocaleString()} /{" "}
+                {beta.max_workspaces.toLocaleString()}
+              </p>
+              <p className="text-xs text-amber-100/70">registered workspaces</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
