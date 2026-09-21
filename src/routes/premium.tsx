@@ -33,8 +33,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/premium")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Premium Workspace" },
-      { name: "description", content: "Premium analysis workspace by Lum Tech Solutions." },
+      { title: "Lotto IQ — Premium Workspace" },
+      { name: "description", content: "Premium analysis workspace for Lotto IQ." },
     ],
   }),
   component: PremiumPage,
@@ -121,7 +121,7 @@ function PremiumPage() {
       <header className="mb-7 flex flex-col justify-between gap-5 rounded-3xl border border-primary/25 bg-primary/10 p-6 sm:flex-row sm:items-end sm:p-8">
         <div>
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            <Crown className="size-4" /> Premium workspace · Lum Tech Solutions
+            <Crown className="size-4" /> Premium workspace · Lotto IQ Team
           </p>
           <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
             More signal. One private workspace.

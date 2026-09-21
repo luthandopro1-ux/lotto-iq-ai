@@ -1,4 +1,4 @@
-# Lotto IQ AI Android packaging
+# Lotto IQ Android packaging
 
 **Developer:** Lum Tech Solutions
 

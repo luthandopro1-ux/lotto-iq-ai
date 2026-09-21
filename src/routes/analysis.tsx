@@ -25,7 +25,7 @@ import { BrainCircuit, Download, RefreshCw, Save } from "lucide-react";
 export const Route = createFileRoute("/analysis")({
   head: () => ({
     meta: [
-      { title: "Analysis Engine — Lotto IQ AI" },
+      { title: "Analysis Engine — Lotto IQ" },
       {
         name: "description",
         content:

@@ -4,8 +4,8 @@ import { PublicPageShell, PublicSection } from "@/components/PublicPageShell";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Privacy Policy" },
-      { name: "description", content: "Privacy policy for Lotto IQ AI by Lum Tech Solutions." },
+      { title: "Lotto IQ — Privacy Policy" },
+      { name: "description", content: "Privacy policy for Lotto IQ by Lum Tech Solutions." },
     ],
   }),
   component: PrivacyPage,
@@ -15,17 +15,17 @@ function PrivacyPage() {
   return (
     <PublicPageShell
       eyebrow="Privacy policy"
-      title="Privacy that matches what Lotto IQ AI actually does"
+      title="Privacy that matches what Lotto IQ actually does"
     >
       <p>
         <strong className="text-foreground">Effective date: 18 September 2026.</strong> This policy
-        describes the current Lotto IQ AI web application developed by Lum Tech Solutions. It will
-        be updated before any advertising, paid billing, or notification provider is activated.
+        describes the current Lotto IQ web application developed by Lum Tech Solutions. It will be
+        updated before any advertising, paid billing, or notification provider is activated.
       </p>
       <PublicSection title="Information we receive">
         <p>
           If you create an account, Supabase Auth processes your email address, authentication
-          credentials, and session information. Lotto IQ AI stores the profile, personal workspace,
+          credentials, and session information. Lotto IQ stores the profile, personal workspace,
           workspace membership, workspace settings, Premium entitlement state, and notification
           preferences needed to operate the features you use.
         </p>
@@ -62,7 +62,7 @@ function PrivacyPage() {
         <p>
           For privacy questions, use{" "}
           <a className="text-primary hover:underline" href="/support">
-            Lotto IQ AI Support
+            Lotto IQ Support
           </a>{" "}
           and include enough detail for us to identify the issue without sending secrets.
         </p>

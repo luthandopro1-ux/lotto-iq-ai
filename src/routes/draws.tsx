@@ -18,7 +18,7 @@ import { Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 export const Route = createFileRoute("/draws")({
   head: () => ({
     meta: [
-      { title: "Historical Draws — Lotto IQ AI" },
+      { title: "Historical Draws — Lotto IQ" },
       {
         name: "description",
         content:

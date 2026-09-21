@@ -31,8 +31,8 @@ type PreferencesDb = {
 export const Route = createFileRoute("/notifications")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Notification Preferences" },
-      { name: "description", content: "Notification consent preferences for Lotto IQ AI." },
+      { title: "Lotto IQ — Notification Preferences" },
+      { name: "description", content: "Notification consent preferences for Lotto IQ." },
     ],
   }),
   component: NotificationsPage,

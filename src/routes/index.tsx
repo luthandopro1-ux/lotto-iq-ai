@@ -18,14 +18,14 @@ import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — UK49 Strategy Analysis by Lum Tech Solutions" },
+      { title: "Lotto IQ — UK49 Strategy Analysis by Lum Tech Solutions" },
       {
         name: "description",
         content:
-          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ AI by Lum Tech Solutions.",
+          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ by Lum Tech Solutions.",
       },
       { name: "author", content: "Lum Tech Solutions" },
-      { property: "og:title", content: "Lotto IQ AI — UK49 Strategy Analysis" },
+      { property: "og:title", content: "Lotto IQ — UK49 Strategy Analysis" },
       {
         property: "og:description",
         content:
@@ -116,7 +116,7 @@ function LandingPage() {
             Make your lottery analysis <span className="gradient-text">repeatable.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-            Lotto IQ AI helps you organize UK49 draw history, run defined strategies, and inspect
+            Lotto IQ helps you organize UK49 draw history, run defined strategies, and inspect
             ranked candidate numbers in one focused workspace.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
