@@ -148,7 +148,7 @@ export interface RunBacktestOptions {
  * reusable for tests.
  */
 export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
-  const { dateFrom, dateTo, strategies, simulations = 400 } = options;
+  const { dateFrom, dateTo, strategies, simulations = 150 } = options;
 
   const chronological = [...options.history].sort(compareDrawSlots);
 
