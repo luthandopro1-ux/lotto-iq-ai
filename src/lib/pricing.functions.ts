@@ -25,7 +25,13 @@ export const getPricingContext = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export type EarlyBirdStatus = { limit: number; claimed: number; remaining: number };
+export type EarlyBirdStatus = {
+  limit: number;
+  claimed: number;
+  remaining: number;
+  enabled?: boolean;
+  ends_at?: string;
+};
 
 type CountryCaptureDb = {
   rpc: (
@@ -63,7 +69,7 @@ export const getEarlyBirdStatus = createServerFn({ method: "GET" }).handler(
     const { serverDb } = await import("@/lib/db.server");
     const db = serverDb() as unknown as EarlyBirdStatusDb;
     const { data, error } = await db.rpc("get_early_bird_status");
-    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000 };
+    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000, enabled: false };
     return data;
   },
 );
