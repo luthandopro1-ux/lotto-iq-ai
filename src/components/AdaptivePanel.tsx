@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Panel } from "@/components/AppShell";
+import { Ball, Panel } from "@/components/AppShell";
 import { adaptiveReport } from "@/lib/adaptive.functions";
 import type { SessionKey } from "@/lib/uk49";
 
@@ -117,13 +117,14 @@ export function AdaptivePanel({ date, session }: { date: string; session: Sessio
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {data.numbers.slice(0, 10).map((n) => (
-                <span
+                <div
                   key={n.n}
-                  className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-xs"
+                  className="flex items-center gap-1.5 rounded-lg bg-secondary/60 px-2 py-1 font-mono text-xs"
                   title={n.strategies.join(", ")}
                 >
-                  {pad(n.n)} <span className="text-muted-foreground">{n.score}</span>
-                </span>
+                  <Ball n={n.n} className="size-7 text-[11px]" />
+                  <span className="text-muted-foreground">{n.score}</span>
+                </div>
               ))}
             </div>
           </div>

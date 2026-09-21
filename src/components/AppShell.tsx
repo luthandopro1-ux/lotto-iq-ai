@@ -22,6 +22,7 @@ import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
 import { BrandMark } from "@/components/BrandMark";
 import { BrandCopyright } from "@/components/BrandCopyright";
+import { UK49_COLOUR_LABELS, uk49ColourForNumber } from "@/lib/uk49-colours";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccessContext } from "@/lib/customer.functions";
 
@@ -219,19 +220,20 @@ export function Panel({
 export function Ball({
   n,
   variant = "default",
+  className = "",
+  title,
 }: {
   n: number;
   variant?: "default" | "primary" | "accent";
+  className?: string;
+  title?: string;
 }) {
+  const colour = uk49ColourForNumber(n);
   return (
     <span
-      className={
-        variant === "primary"
-          ? "ball ball-primary"
-          : variant === "accent"
-            ? "ball ball-accent"
-            : "ball"
-      }
+      className={`ball ball-uk-${colour} ${variant === "primary" ? "ball-primary" : variant === "accent" ? "ball-accent" : ""} ${className}`}
+      title={title ?? `UK49 ${UK49_COLOUR_LABELS[colour]} ball · ${n}`}
+      aria-label={`Number ${n}, ${UK49_COLOUR_LABELS[colour]} UK49 ball`}
     >
       {n}
     </span>

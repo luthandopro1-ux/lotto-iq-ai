@@ -353,9 +353,7 @@ function AdminDashboard() {
             <div className="mt-3 space-y-2">
               {liveStats.numbers.slice(0, 6).map((number) => (
                 <div key={number.n} className="flex items-center gap-2 text-xs">
-                  <span className="w-7 font-mono font-bold">
-                    {String(number.n).padStart(2, "0")}
-                  </span>
+                  <Ball n={number.n} className="size-7 text-[11px]" />
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/70">
                     <div
                       className="h-full rounded-full bg-primary"

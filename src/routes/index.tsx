@@ -9,6 +9,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { Ball } from "@/components/AppShell";
 import { BrandMark } from "@/components/BrandMark";
 import { BrandCopyright } from "@/components/BrandCopyright";
 import { useQuery } from "@tanstack/react-query";
@@ -190,13 +191,10 @@ function LandingPage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 {[7, 14, 23, 31, 44].map((number, index) => (
                   <div key={number} className="text-center">
-                    <span
-                      className={
-                        index === 0 ? "ball ball-primary" : index < 3 ? "ball ball-accent" : "ball"
-                      }
-                    >
-                      {number}
-                    </span>
+                    <Ball
+                      n={number}
+                      variant={index === 0 ? "primary" : index < 3 ? "accent" : "default"}
+                    />
                     <p className="mt-2 font-mono text-[10px] text-muted-foreground">
                       {(9.4 - index * 0.8).toFixed(1)}
                     </p>

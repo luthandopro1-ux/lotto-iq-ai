@@ -349,9 +349,7 @@ function AnalysisPage() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {p.numbers.map((n) => (
-                  <span key={n} className="ball size-8 text-xs">
-                    {n}
-                  </span>
+                  <Ball key={n} n={n} className="size-8 text-xs" />
                 ))}
                 {p.numbers.length === 0 && (
                   <span className="text-xs text-muted-foreground">No output for this draw.</span>
