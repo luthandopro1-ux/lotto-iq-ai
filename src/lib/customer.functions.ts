@@ -140,6 +140,12 @@ export function asNumberArray(value: unknown, max: number): number[] {
   return result;
 }
 
+/** Count only matches in the client-visible prediction pool. */
+export function countVisibleMatches(pool: number[], actual: number[]): number {
+  const visible = new Set(pool);
+  return actual.filter((number) => visible.has(number)).length;
+}
+
 /**
  * `predictions.rows` is `PredictionRow[]` — each entry is a compound
  * betting-line suggestion `{ banker: PickedNumber, pair: [PickedNumber,
@@ -227,7 +233,7 @@ function toCustomerPrediction(row: Row | null | undefined): CustomerPrediction |
     status: String(row["status"] ?? "pending"),
     actualNumbers: actual.numbers,
     actualBooster: actual.booster,
-    matchedCount: Number(row["matched_count"] ?? 0),
+    matchedCount: countVisibleMatches(pool, actual.numbers),
     outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
     gradedAt: typeof row["graded_at"] === "string" ? row["graded_at"] : null,
   };
@@ -460,7 +466,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
         pool: asNumberArray(row["pool"], 14),
         actualNumbers: actual.numbers,
         actualBooster: actual.booster,
-        matchedCount: Number(row["matched_count"] ?? 0),
+        matchedCount: countVisibleMatches(asNumberArray(row["pool"], 14), actual.numbers),
         outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
         ensemble: analysis
           ? {

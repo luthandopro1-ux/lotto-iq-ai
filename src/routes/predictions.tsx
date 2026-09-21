@@ -253,6 +253,7 @@ function PredictionsPage() {
         {SESSIONS.map((session) => {
           const slot = board.find((b) => b.session === session);
           const p = slot?.prediction ?? null;
+          const visiblePool = p?.pool.slice(0, 14) ?? [];
           const grading = (p?.grading ?? null) as Grading | null;
           const rows = (p?.rows ?? []) as unknown as PredictionRow[];
           const drawn = slot?.draw ?? null;
@@ -271,7 +272,8 @@ function PredictionsPage() {
                   )}
                   {grading ? (
                     <span className="rounded-lg bg-primary/15 px-2 py-1 font-semibold text-primary">
-                      {grading.matched} of {p?.pool.length ?? 0} candidates hit
+                      {visiblePool.filter((picked) => grading.actual.includes(picked.n)).length} of{" "}
+                      {visiblePool.length} visible candidates hit
                     </span>
                   ) : drawn ? (
                     <span className="text-muted-foreground">drawn, no saved prediction</span>
@@ -296,7 +298,9 @@ function PredictionsPage() {
                     <Ball
                       key={number}
                       n={number}
-                      variant={p?.pool.some((picked) => picked.n === number) ? "matched" : "accent"}
+                      variant={
+                        visiblePool.some((picked) => picked.n === number) ? "matched" : "accent"
+                      }
                       className="!size-7 !text-[10px]"
                     />
                   ))}
@@ -352,12 +356,24 @@ function PredictionsPage() {
                           <div key={x.n} className="flex flex-wrap items-baseline gap-2 text-xs">
                             <Ball
                               n={x.n}
-                              variant={grading?.actual.includes(x.n) ? "matched" : "default"}
+                              variant={
+                                visiblePool.some((picked) => picked.n === x.n) &&
+                                grading?.actual.includes(x.n)
+                                  ? "matched"
+                                  : "default"
+                              }
                               className="!size-8 !text-[10px]"
                             />
                             <span className="text-muted-foreground">score {x.score}</span>
                             <span className="text-primary">{x.strategies.join(", ")}</span>
-                            {grading && <Flag hit={grading.actual.includes(x.n)} />}
+                            {grading && (
+                              <Flag
+                                hit={
+                                  visiblePool.some((picked) => picked.n === x.n) &&
+                                  grading.actual.includes(x.n)
+                                }
+                              />
+                            )}
                           </div>
                         ))}
                     </div>
