@@ -375,6 +375,7 @@ function SessionPredictionGrid({ predictions }: { predictions: CustomerPredictio
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {clientSessions.map(([key, label]) => {
           const prediction = current.find((item) => item.targetSession === key);
+          const matchedNumbers = new Set(prediction?.actualNumbers ?? []);
           return (
             <div key={key} className="rounded-xl border border-border/60 bg-background/20 p-4">
               <div className="flex items-center justify-between gap-2">
@@ -384,9 +385,13 @@ function SessionPredictionGrid({ predictions }: { predictions: CustomerPredictio
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {prediction?.pool.map((number) => <Ball key={number} n={number} />) ?? (
-                  <span className="text-xs text-muted-foreground">Not published yet.</span>
-                )}
+                {prediction?.pool.map((number) => (
+                  <Ball
+                    key={number}
+                    n={number}
+                    variant={matchedNumbers.has(number) ? "matched" : "default"}
+                  />
+                )) ?? <span className="text-xs text-muted-foreground">Not published yet.</span>}
               </div>
               {prediction?.actualNumbers.length ? (
                 <div className="mt-4 border-t border-border/60 pt-3">
@@ -395,7 +400,11 @@ function SessionPredictionGrid({ predictions }: { predictions: CustomerPredictio
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {prediction.actualNumbers.map((number) => (
-                      <Ball key={number} n={number} variant="accent" />
+                      <Ball
+                        key={number}
+                        n={number}
+                        variant={prediction.pool.includes(number) ? "matched" : "accent"}
+                      />
                     ))}
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground">
@@ -431,13 +440,12 @@ function WheelPanel({ wheel }: { wheel: DashboardData["wheel"] }) {
           </p>
           <div className="grid grid-cols-7 gap-2">
             {wheel.map((item) => (
-              <div
+              <Ball
                 key={item.number}
-                className="grid aspect-square place-items-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                n={item.number}
+                className="!size-10 !text-xs"
                 title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-              >
-                {item.number}
-              </div>
+              />
             ))}
           </div>
           {!wheel.length && (
@@ -456,52 +464,65 @@ function PredictionHistory({ predictions }: { predictions: CustomerPrediction[] 
         Every stored prediction remains visible here after its draw is verified and graded.
       </p>
       <div className="space-y-3">
-        {predictions.map((prediction) => (
-          <div
-            key={`${prediction.targetDate}-${prediction.targetSession}`}
-            className="rounded-xl border border-border/60 bg-background/20 p-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-semibold text-foreground">
-                {prediction.targetDate} · {prediction.targetSession}
-              </span>
-              <span className="uppercase tracking-wider text-muted-foreground">
-                {prediction.outcome ?? prediction.status}
-              </span>
-            </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  Predicted
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {prediction.pool.map((number) => (
-                    <Ball key={number} n={number} />
-                  ))}
-                </div>
+        {predictions.map((prediction) => {
+          const matchedNumbers = new Set(prediction.actualNumbers);
+          return (
+            <div
+              key={`${prediction.targetDate}-${prediction.targetSession}`}
+              className="rounded-xl border border-border/60 bg-background/20 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-semibold text-foreground">
+                  {prediction.targetDate} · {prediction.targetSession}
+                </span>
+                <span className="uppercase tracking-wider text-muted-foreground">
+                  {prediction.outcome ?? prediction.status}
+                </span>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-                  Winning numbers
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {prediction.actualNumbers.length ? (
-                    prediction.actualNumbers.map((number) => (
-                      <Ball key={number} n={number} variant="accent" />
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Awaiting verified result.</span>
-                  )}
-                </div>
-                {prediction.actualNumbers.length ? (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {prediction.matchedCount} match{prediction.matchedCount === 1 ? "" : "es"}
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    Predicted
                   </p>
-                ) : null}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {prediction.pool.map((number) => (
+                      <Ball
+                        key={number}
+                        n={number}
+                        variant={matchedNumbers.has(number) ? "matched" : "default"}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                    Winning numbers
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {prediction.actualNumbers.length ? (
+                      prediction.actualNumbers.map((number) => (
+                        <Ball
+                          key={number}
+                          n={number}
+                          variant={prediction.pool.includes(number) ? "matched" : "accent"}
+                        />
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Awaiting verified result.
+                      </span>
+                    )}
+                  </div>
+                  {prediction.actualNumbers.length ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {prediction.matchedCount} match{prediction.matchedCount === 1 ? "" : "es"}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {!predictions.length && (
           <p className="text-sm text-muted-foreground">No prediction records are available yet.</p>
         )}

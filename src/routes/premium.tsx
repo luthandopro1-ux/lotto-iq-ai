@@ -253,9 +253,7 @@ function PremiumPage() {
                   className={`rounded-2xl border p-4 ${index === 0 ? "border-primary/40 bg-primary/10" : "border-border/60 bg-background/20"}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-display text-2xl font-bold">
-                      {String(candidate.number).padStart(2, "0")}
-                    </span>
+                    <Ball n={candidate.number} className="!size-10 !text-sm" />
                     <span className="text-xs text-primary">rank {index + 1}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
@@ -289,13 +287,12 @@ function PremiumPage() {
             />
             <div className="grid grid-cols-7 gap-2">
               {(workspace?.wheel ?? []).map((item) => (
-                <div
+                <Ball
                   key={item.number}
-                  className="grid aspect-square place-items-center rounded-full border border-primary/30 bg-primary/10 text-sm font-bold text-primary"
+                  n={item.number}
+                  className="!size-10 !text-sm"
                   title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-                >
-                  {item.number}
-                </div>
+                />
               ))}
             </div>
           </div>
@@ -319,9 +316,17 @@ function PremiumPage() {
           {prediction ? (
             <>
               <div className="mt-6 flex items-center gap-3">
-                <div className="grid size-16 place-items-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-                  {workspace?.banker ? String(workspace.banker).padStart(2, "0") : "—"}
-                </div>
+                {workspace?.banker ? (
+                  <Ball
+                    n={workspace.banker}
+                    variant="primary"
+                    className="!size-16 !rounded-2xl !text-xl"
+                  />
+                ) : (
+                  <div className="grid size-16 place-items-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
+                    —
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold">Highly rated banker</p>
                   <p className="text-xs text-muted-foreground">
@@ -331,12 +336,12 @@ function PremiumPage() {
               </div>
               <div className="mt-6 flex flex-wrap gap-2">
                 {prediction.ranking.map((number, index) => (
-                  <span
+                  <Ball
                     key={`${number}-${index}`}
-                    className="rounded-full border border-border bg-background/40 px-3 py-1.5 text-xs font-semibold"
-                  >
-                    {index + 1}. {String(number).padStart(2, "0")}
-                  </span>
+                    n={number}
+                    className="!size-9 !text-xs"
+                    title={`Rank ${index + 1} · UK49 number ${number}`}
+                  />
                 ))}
               </div>
             </>
@@ -442,6 +447,7 @@ function PremiumSessionGrid({
       <div className="mt-5 grid gap-4 xl:grid-cols-4">
         {order.map(([key, label]) => {
           const session = current.find((item) => item.targetSession === key);
+          const matchedNumbers = new Set(session?.actualNumbers ?? []);
           return (
             <div key={key} className="rounded-2xl border border-border/60 bg-background/30 p-4">
               <div className="flex items-center justify-between gap-2">
@@ -454,22 +460,26 @@ function PremiumSessionGrid({
                 Prediction pool
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {session?.pool.map((number) => <Ball key={number} n={number} />) ?? (
-                  <span className="text-xs text-muted-foreground">Not published yet.</span>
-                )}
+                {session?.pool.map((number) => (
+                  <Ball
+                    key={number}
+                    n={number}
+                    variant={matchedNumbers.has(number) ? "matched" : "default"}
+                  />
+                )) ?? <span className="text-xs text-muted-foreground">Not published yet.</span>}
               </div>
               <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-violet-300">
                 Full ensemble
               </p>
               <div className="mt-2 grid grid-cols-7 gap-1.5">
                 {session?.ensemble?.candidates.map((candidate) => (
-                  <span
+                  <Ball
                     key={candidate.number}
-                    className="grid aspect-square place-items-center rounded-full border border-violet-400/30 bg-violet-400/10 text-[10px] font-semibold text-violet-200"
+                    n={candidate.number}
+                    variant={matchedNumbers.has(candidate.number) ? "matched" : "default"}
+                    className="!size-8 !text-[10px]"
                     title={`Score ${candidate.score.toFixed(2)} · agreement ${candidate.agreement}`}
-                  >
-                    {candidate.number}
-                  </span>
+                  />
                 ))}
               </div>
               {session?.actualNumbers.length ? (
@@ -479,7 +489,11 @@ function PremiumSessionGrid({
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {session.actualNumbers.map((number) => (
-                      <Ball key={number} n={number} variant="accent" />
+                      <Ball
+                        key={number}
+                        n={number}
+                        variant={session.pool.includes(number) ? "matched" : "accent"}
+                      />
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
