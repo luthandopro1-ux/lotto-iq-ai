@@ -20,6 +20,7 @@ import {
   getPremiumWorkspace,
   saveCustomerFormula,
   claimEarlyBirdPremium,
+  type PremiumWorkspace,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
 import {
@@ -29,6 +30,7 @@ import {
 } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
+import { Ball } from "@/components/AppShell";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
@@ -136,6 +138,11 @@ function PremiumPage() {
           <ShieldCheck className="size-4" /> No advertisements
         </div>
       </header>
+
+      <PremiumSessionGrid
+        sessions={workspace?.sessions ?? []}
+        currentDate={workspace?.currentDate}
+      />
 
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -274,16 +281,23 @@ function PremiumPage() {
             title="Analysis wheel"
             subtitle="Premium ranking view from the latest stored run."
           />
-          <div className="mt-6 grid grid-cols-5 gap-2">
-            {(workspace?.wheel ?? []).map((item) => (
-              <div
-                key={item.number}
-                className="grid aspect-square place-items-center rounded-full border border-primary/30 bg-primary/10 text-sm font-bold text-primary"
-                title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-              >
-                {item.number}
-              </div>
-            ))}
+          <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center">
+            <img
+              src="/lotto-iq-dream-wheel.jpg"
+              alt="Lotto IQ UK 49s Dream Wheel"
+              className="mx-auto aspect-square w-full max-w-xs rounded-2xl border border-border/60 object-cover"
+            />
+            <div className="grid grid-cols-7 gap-2">
+              {(workspace?.wheel ?? []).map((item) => (
+                <div
+                  key={item.number}
+                  className="grid aspect-square place-items-center rounded-full border border-primary/30 bg-primary/10 text-sm font-bold text-primary"
+                  title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
+                >
+                  {item.number}
+                </div>
+              ))}
+            </div>
           </div>
           {!workspace?.wheel.length && (
             <EmptyState label="The wheel will populate after the next stored analysis run." />
@@ -390,13 +404,104 @@ function PremiumPage() {
   );
 }
 
+type PremiumSession = PremiumWorkspace["sessions"][number];
+
+function PremiumSessionGrid({
+  sessions,
+  currentDate,
+}: {
+  sessions: PremiumSession[];
+  currentDate: string | null | undefined;
+}) {
+  const current = sessions.filter((session) => session.targetDate === currentDate);
+  const order = [
+    ["brunch", "Brunch"],
+    ["lunch", "Lunch"],
+    ["drivetime", "Drive Time"],
+    ["teatime", "Tea Time"],
+  ] as const;
+  return (
+    <section className="mb-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-7">
+      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Live ensemble schedule
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-bold">
+            Full ensemble from Brunch to Tea Time
+          </h2>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {currentDate ?? "Awaiting draw schedule"}
+        </span>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Brunch and Lunch share the same locked live numbers. Drive Time and Tea Time receive their
+        own refreshed ensemble when their draw window is reached.
+      </p>
+      <div className="mt-5 grid gap-4 xl:grid-cols-4">
+        {order.map(([key, label]) => {
+          const session = current.find((item) => item.targetSession === key);
+          return (
+            <div key={key} className="rounded-2xl border border-border/60 bg-background/30 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold">{label}</h3>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {session?.status ?? "waiting"}
+                </span>
+              </div>
+              <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                Prediction pool
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {session?.pool.map((number) => <Ball key={number} n={number} />) ?? (
+                  <span className="text-xs text-muted-foreground">Not published yet.</span>
+                )}
+              </div>
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-violet-300">
+                Full ensemble
+              </p>
+              <div className="mt-2 grid grid-cols-7 gap-1.5">
+                {session?.ensemble?.candidates.map((candidate) => (
+                  <span
+                    key={candidate.number}
+                    className="grid aspect-square place-items-center rounded-full border border-violet-400/30 bg-violet-400/10 text-[10px] font-semibold text-violet-200"
+                    title={`Score ${candidate.score.toFixed(2)} · agreement ${candidate.agreement}`}
+                  >
+                    {candidate.number}
+                  </span>
+                ))}
+              </div>
+              {session?.actualNumbers.length ? (
+                <div className="mt-4 border-t border-border/60 pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                    Winning numbers
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {session.actualNumbers.map((number) => (
+                      <Ball key={number} n={number} variant="accent" />
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {session.matchedCount} predicted matches
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8">
       <div className="mx-auto max-w-7xl">
         <nav className="mb-8 flex items-center justify-between">
           <Link to="/dashboard" className="font-display text-lg font-bold">
-            Lotto<span className="gradient-text">IQ</span> AI
+            Lotto <span className="gradient-text">IQ</span>
           </Link>
           <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
             Back to dashboard <ArrowRight className="ml-1 inline size-3" />

@@ -57,8 +57,8 @@ export interface AnalysisSnapshotRow {
 }
 
 /**
- * Runs the analysis engine for one target draw and stores the top-5
- * numbers, top-5 pairs and a per-strategy breakdown as one row in
+ * Runs the analysis engine for one target draw and stores the full ranked
+ * ensemble, top-5 pairs and a per-strategy breakdown as one row in
  * `analysis_runs`. History must already be filtered to draws strictly
  * before the target — callers pass whatever slice they consider "known"
  * at the time so no future information leaks in.
@@ -80,7 +80,7 @@ export async function computeAndStoreAnalysisSnapshot(
 
   const pairs = rankPairs(result.ranked, history, { limit: 5 });
 
-  const topNumbers: StoredTopNumber[] = result.ranked.slice(0, 5).map((r) => ({
+  const topNumbers: StoredTopNumber[] = result.ranked.map((r) => ({
     number: r.number,
     score: Number(r.score.toFixed(2)),
     agreement: r.agreement,

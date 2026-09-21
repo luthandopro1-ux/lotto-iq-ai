@@ -8,13 +8,18 @@ import {
   CirclePlay,
   Flame,
   LockKeyhole,
+  Trophy,
   ShieldCheck,
   Snowflake,
   Target,
   Video,
 } from "lucide-react";
 import { AppShell, Ball, Panel } from "@/components/AppShell";
-import { getCustomerDashboard, type CustomerDashboard } from "@/lib/customer.functions";
+import {
+  getCustomerDashboard,
+  type CustomerDashboard,
+  type CustomerPrediction,
+} from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -171,9 +176,9 @@ function DashboardContent({ data }: { data: DashboardData }) {
               Your current draw brief.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              This client view intentionally excludes the ledger, strategy uploads, ensemble
-              statistics, wheel, and candidate descriptions. Your formulas remain private to your
-              workspace.
+              Your client view shows the live Brunch-to-Tea prediction schedule, verified winning
+              numbers, and the Lotto IQ analysis wheel. Full ensemble rationale remains
+              Premium-only.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -209,6 +214,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
           />
           <Stat icon={CheckCircle2} label="Access boundary" value="Workspace isolated" />
         </div>
+        <SessionPredictionGrid predictions={data.predictions} />
         <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
           <Panel
             title="14-ball pool"
@@ -271,6 +277,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </div>
           </Panel>
         </div>
+        <WheelPanel wheel={data.wheel} />
+        <PredictionHistory predictions={data.predictions} />
         <Panel
           title="Past draw results"
           action={
@@ -342,6 +350,163 @@ function DashboardContent({ data }: { data: DashboardData }) {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+const clientSessions = [
+  ["brunch", "Brunch"],
+  ["lunch", "Lunch"],
+  ["drivetime", "Drive Time"],
+  ["teatime", "Tea Time"],
+] as const;
+
+function SessionPredictionGrid({ predictions }: { predictions: CustomerPrediction[] }) {
+  const currentDate = predictions[0]?.targetDate;
+  const current = predictions.filter((prediction) => prediction.targetDate === currentDate);
+  return (
+    <Panel
+      title="Live draw predictions"
+      action={<span className="text-xs text-muted-foreground">Brunch → Lunch → Drive → Tea</span>}
+    >
+      <p className="mb-4 text-sm text-muted-foreground">
+        Brunch and Lunch share one locked prediction. Drive Time and Tea Time are refreshed for
+        their own draw windows.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {clientSessions.map(([key, label]) => {
+          const prediction = current.find((item) => item.targetSession === key);
+          return (
+            <div key={key} className="rounded-xl border border-border/60 bg-background/20 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold">{label}</p>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {prediction?.status ?? "waiting"}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {prediction?.pool.map((number) => <Ball key={number} n={number} />) ?? (
+                  <span className="text-xs text-muted-foreground">Not published yet.</span>
+                )}
+              </div>
+              {prediction?.actualNumbers.length ? (
+                <div className="mt-4 border-t border-border/60 pt-3">
+                  <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                    <Trophy className="size-3" /> Winning numbers
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {prediction.actualNumbers.map((number) => (
+                      <Ball key={number} n={number} variant="accent" />
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    {prediction.matchedCount} predicted match
+                    {prediction.matchedCount === 1 ? "" : "es"}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
+function WheelPanel({ wheel }: { wheel: DashboardData["wheel"] }) {
+  return (
+    <Panel
+      title="Lotto IQ analysis wheel"
+      action={<span className="text-xs text-muted-foreground">Latest stored draw analysis</span>}
+    >
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-center">
+        <img
+          src="/lotto-iq-dream-wheel.jpg"
+          alt="Lotto IQ UK 49s Dream Wheel"
+          className="mx-auto aspect-square w-full max-w-sm rounded-2xl border border-border/60 object-cover"
+        />
+        <div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            The wheel reflects the latest stored ensemble ranking. Scores and agreements are
+            analytical signals, not guarantees.
+          </p>
+          <div className="grid grid-cols-7 gap-2">
+            {wheel.map((item) => (
+              <div
+                key={item.number}
+                className="grid aspect-square place-items-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
+              >
+                {item.number}
+              </div>
+            ))}
+          </div>
+          {!wheel.length && (
+            <p className="text-sm text-muted-foreground">No wheel is available yet.</p>
+          )}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function PredictionHistory({ predictions }: { predictions: CustomerPrediction[] }) {
+  return (
+    <Panel title="Prediction and winning-number record">
+      <p className="mb-4 text-sm text-muted-foreground">
+        Every stored prediction remains visible here after its draw is verified and graded.
+      </p>
+      <div className="space-y-3">
+        {predictions.map((prediction) => (
+          <div
+            key={`${prediction.targetDate}-${prediction.targetSession}`}
+            className="rounded-xl border border-border/60 bg-background/20 p-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-foreground">
+                {prediction.targetDate} · {prediction.targetSession}
+              </span>
+              <span className="uppercase tracking-wider text-muted-foreground">
+                {prediction.outcome ?? prediction.status}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Predicted
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {prediction.pool.map((number) => (
+                    <Ball key={number} n={number} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                  Winning numbers
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {prediction.actualNumbers.length ? (
+                    prediction.actualNumbers.map((number) => (
+                      <Ball key={number} n={number} variant="accent" />
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Awaiting verified result.</span>
+                  )}
+                </div>
+                {prediction.actualNumbers.length ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {prediction.matchedCount} match{prediction.matchedCount === 1 ? "" : "es"}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ))}
+        {!predictions.length && (
+          <p className="text-sm text-muted-foreground">No prediction records are available yet.</p>
+        )}
+      </div>
+    </Panel>
   );
 }
 

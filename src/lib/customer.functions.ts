@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAccessContext } from "@/lib/authorization.server";
+import { SESSIONS } from "@/lib/uk49";
 
 const formulaInput = z.object({
   name: z.string().trim().min(2).max(120),
@@ -36,7 +37,13 @@ export type CustomerPrediction = {
   hotBalls: number[];
   coldBalls: number[];
   status: string;
+  actualNumbers: number[];
+  actualBooster: number | null;
+  matchedCount: number;
+  outcome: string | null;
+  gradedAt: string | null;
 };
+export type CustomerWheel = { number: number; score: number; agreement: number };
 export type CustomerVideo = { title: string; category: string; duration: string };
 export type CustomerDashboard = {
   role: "unauthenticated" | "free" | "premium" | "administrator";
@@ -45,12 +52,14 @@ export type CustomerDashboard = {
   formulas: CustomerFormula[];
   draws: CustomerDraw[];
   prediction: CustomerPrediction | null;
+  predictions: CustomerPrediction[];
+  wheel: CustomerWheel[];
   videos: CustomerVideo[];
   featureVisibility: {
     ledger: false;
     strategyUpload: false;
     ensemble: false;
-    statisticsWheel: false;
+    statisticsWheel: boolean;
     candidateDescription: false;
   };
 };
@@ -73,6 +82,19 @@ export type PremiumWorkspace = {
   } | null;
   ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
   wheel: Array<{ number: number; score: number; agreement: number }>;
+  currentDate: string | null;
+  sessions: Array<{
+    targetDate: string;
+    targetSession: string;
+    status: string;
+    banker: number | null;
+    pool: number[];
+    actualNumbers: number[];
+    actualBooster: number | null;
+    matchedCount: number;
+    outcome: string | null;
+    ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
+  }>;
   candidateDescriptions: Array<{ number: number; rationale: string }>;
 };
 type QueryResult = { data: Row[] | Row | null; error: { message: string } | null };
@@ -165,7 +187,7 @@ export function flattenRowsToRanking(value: unknown, max: number): number[] {
 }
 function asCandidates(value: unknown): PremiumCandidate[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 14).flatMap((item) => {
+  return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
     const number = Number(row["number"]);
@@ -180,6 +202,44 @@ function asCandidates(value: unknown): PremiumCandidate[] {
           : [],
       },
     ];
+  });
+}
+
+function asActual(value: unknown): { numbers: number[]; booster: number | null } {
+  if (!value || typeof value !== "object") return { numbers: [], booster: null };
+  const row = value as Record<string, unknown>;
+  return { numbers: asNumberArray(row["numbers"], 6), booster: toBallNumber(row["booster"]) };
+}
+
+function toCustomerPrediction(row: Row | null | undefined): CustomerPrediction | null {
+  if (!row) return null;
+  const actual = asActual(row["actual"]);
+  const pool = asNumberArray(row["pool"], 14);
+  return {
+    targetDate: String(row["target_date"]),
+    targetSession: String(row["target_session"]),
+    generatedAt: String(row["generated_at"]),
+    banker: typeof row["banker"] === "number" ? row["banker"] : null,
+    sevenBallRanking: flattenRowsToRanking(row["rows"], 7),
+    pool,
+    hotBalls: pool.slice(0, 5),
+    coldBalls: pool.slice(-5),
+    status: String(row["status"] ?? "pending"),
+    actualNumbers: actual.numbers,
+    actualBooster: actual.booster,
+    matchedCount: Number(row["matched_count"] ?? 0),
+    outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
+    gradedAt: typeof row["graded_at"] === "string" ? row["graded_at"] : null,
+  };
+}
+
+function sortPredictions(rows: CustomerPrediction[]) {
+  return rows.sort((a, b) => {
+    if (a.targetDate !== b.targetDate) return a.targetDate < b.targetDate ? 1 : -1;
+    return (
+      SESSIONS.indexOf(a.targetSession as (typeof SESSIONS)[number]) -
+      SESSIONS.indexOf(b.targetSession as (typeof SESSIONS)[number])
+    );
   });
 }
 
@@ -203,12 +263,14 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         formulas: [],
         draws: [],
         prediction: null,
+        predictions: [],
+        wheel: [],
         videos: [],
         featureVisibility: {
           ledger: false,
           strategyUpload: false,
           ensemble: false,
-          statisticsWheel: false,
+          statisticsWheel: true,
           candidateDescription: false,
         },
       };
@@ -217,6 +279,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
       { data: draws, error: drawsError },
       { data: predictions, error: predictionError },
       { data: formulas, error: formulasError },
+      { data: analyses, error: analysisError },
     ] = await Promise.all([
       db
         .from("draws")
@@ -225,19 +288,26 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         .limit(8),
       db
         .from("predictions")
-        .select("target_date,target_session,generated_at,banker,pool,rows,status")
-        .order("generated_at", { ascending: false })
-        .limit(1),
+        .select(
+          "target_date,target_session,generated_at,banker,pool,rows,status,actual,matched_count,outcome,graded_at",
+        )
+        .order("target_date", { ascending: false }),
       db
         .from("workspace_formulas")
         .select("id,name,expression,created_at,updated_at")
         .eq("workspace_id", accessContext.workspaceId)
         .order("created_at", { ascending: false }),
+      db
+        .from("analysis_runs")
+        .select("top_numbers")
+        .order("created_at", { ascending: false })
+        .limit(1),
     ]);
     if (drawsError) throw new Error(`Failed to load draw results: ${drawsError.message}`);
     if (predictionError)
       throw new Error(`Failed to load prediction summary: ${predictionError.message}`);
     if (formulasError) throw new Error(`Failed to load private formulas: ${formulasError.message}`);
+    if (analysisError) throw new Error(`Failed to load dashboard wheel: ${analysisError.message}`);
     const drawRows: CustomerDraw[] = (Array.isArray(draws) ? draws : []).map((draw) => ({
       draw_date: String(draw["draw_date"]),
       session: String(draw["session"]),
@@ -251,9 +321,21 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
     }));
     const predictionRows = Array.isArray(predictions) ? predictions : [];
     const formulaRows = Array.isArray(formulas) ? formulas : [];
-    const prediction = (predictionRows[0] ?? null) as Row | null;
-    const rows = prediction ? flattenRowsToRanking(prediction["rows"], 7) : [];
-    const pool = prediction ? asNumberArray(prediction["pool"], 14) : [];
+    const customerPredictions = sortPredictions(
+      predictionRows.flatMap((row) => {
+        const prediction = toCustomerPrediction(row);
+        return prediction ? [prediction] : [];
+      }),
+    );
+    const prediction = customerPredictions[0] ?? null;
+    const analysisRows = Array.isArray(analyses) ? analyses : [];
+    const wheel = asCandidates(analysisRows[0]?.["top_numbers"]).map(
+      ({ number, score, agreement }) => ({
+        number,
+        score,
+        agreement,
+      }),
+    );
     return {
       role: accessContext.role,
       planCode: accessContext.planCode ?? "free",
@@ -266,19 +348,9 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         updatedAt: String(formula["updated_at"]),
       })),
       draws: drawRows,
-      prediction: prediction
-        ? {
-            targetDate: String(prediction["target_date"]),
-            targetSession: String(prediction["target_session"]),
-            generatedAt: String(prediction["generated_at"]),
-            banker: typeof prediction["banker"] === "number" ? prediction["banker"] : null,
-            sevenBallRanking: rows,
-            pool,
-            hotBalls: pool.slice(0, 5),
-            coldBalls: pool.slice(-5),
-            status: String(prediction["status"] ?? "pending"),
-          }
-        : null,
+      prediction,
+      predictions: customerPredictions,
+      wheel,
       videos: [
         { title: "Reading your 14-ball pool", category: "Getting started", duration: "02:18" },
         { title: "How to interpret hot and cold balls", category: "Method", duration: "03:42" },
@@ -292,7 +364,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         ledger: false,
         strategyUpload: false,
         ensemble: false,
-        statisticsWheel: false,
+        statisticsWheel: true,
         candidateDescription: false,
       },
     };
@@ -351,48 +423,86 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
     ] = await Promise.all([
       db
         .from("predictions")
-        .select("target_date,target_session,status,banker,pool,rows,generated_at")
-        .order("generated_at", { ascending: false })
-        .limit(1),
+        .select(
+          "target_date,target_session,status,banker,pool,rows,actual,matched_count,outcome,generated_at",
+        )
+        .order("target_date", { ascending: false }),
       db
         .from("analysis_runs")
-        .select("top_numbers,strategy_count,created_at")
-        .order("created_at", { ascending: false })
-        .limit(1),
+        .select("target_date,target_session,top_numbers,strategy_count,created_at")
+        .order("target_date", { ascending: false }),
     ]);
     if (predictionError)
       throw new Error(`Failed to load Premium prediction: ${predictionError.message}`);
     if (analysisError) throw new Error(`Failed to load Premium analysis: ${analysisError.message}`);
-    const prediction = Array.isArray(predictions) && predictions[0] ? predictions[0] : null;
-    const analysis = Array.isArray(analyses) && analyses[0] ? analyses[0] : null;
-    const candidates = asCandidates(analysis?.["top_numbers"]);
-    const pool = asNumberArray(prediction?.["pool"], 14);
-    const ranking = flattenRowsToRanking(prediction?.["rows"], 7);
+    const predictionRows = Array.isArray(predictions) ? predictions : [];
+    const analysisRows = Array.isArray(analyses) ? analyses : [];
+    const orderedPredictions = predictionRows.slice().sort((a, b) => {
+      const dateOrder = String(b["target_date"]).localeCompare(String(a["target_date"]));
+      if (dateOrder !== 0) return dateOrder;
+      return (
+        SESSIONS.indexOf(String(a["target_session"]) as (typeof SESSIONS)[number]) -
+        SESSIONS.indexOf(String(b["target_session"]) as (typeof SESSIONS)[number])
+      );
+    });
+    const sessionRows = orderedPredictions.map((row) => {
+      const analysis = analysisRows.find(
+        (candidate) =>
+          String(candidate["target_date"]) === String(row["target_date"]) &&
+          String(candidate["target_session"]) === String(row["target_session"]),
+      );
+      const actual = asActual(row["actual"]);
+      return {
+        targetDate: String(row["target_date"]),
+        targetSession: String(row["target_session"]),
+        status: String(row["status"] ?? "pending"),
+        banker: typeof row["banker"] === "number" ? row["banker"] : null,
+        pool: asNumberArray(row["pool"], 14),
+        actualNumbers: actual.numbers,
+        actualBooster: actual.booster,
+        matchedCount: Number(row["matched_count"] ?? 0),
+        outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
+        ensemble: analysis
+          ? {
+              candidates: asCandidates(analysis["top_numbers"]),
+              strategyCount: Number(analysis["strategy_count"] ?? 0),
+              createdAt: String(analysis["created_at"]),
+            }
+          : null,
+      };
+    });
+    const latest = sessionRows[0] ?? null;
+    const latestAnalysis = latest
+      ? sessionRows.find(
+          (row) =>
+            row.targetDate === latest.targetDate && row.targetSession === latest.targetSession,
+        )?.ensemble
+      : null;
+    const candidates = latestAnalysis?.candidates ?? [];
+    const prediction = latest;
+    const pool = latest?.pool ?? [];
+    const ranking = latest ? flattenRowsToRanking(orderedPredictions[0]?.["rows"], 7) : [];
     return {
       formulaLimit: 5,
       noAdvertisements: true,
       banker: typeof prediction?.["banker"] === "number" ? prediction["banker"] : null,
       prediction: prediction
         ? {
-            targetDate: String(prediction["target_date"]),
-            targetSession: String(prediction["target_session"]),
-            status: String(prediction["status"] ?? "pending"),
+            targetDate: prediction.targetDate,
+            targetSession: prediction.targetSession,
+            status: prediction.status,
             pool,
             ranking,
           }
         : null,
-      ensemble: analysis
-        ? {
-            candidates,
-            strategyCount: Number(analysis["strategy_count"] ?? 0),
-            createdAt: String(analysis["created_at"]),
-          }
-        : null,
-      wheel: candidates.slice(0, 10).map((candidate) => ({
+      ensemble: latestAnalysis ?? null,
+      wheel: candidates.map((candidate) => ({
         number: candidate.number,
         score: candidate.score,
         agreement: candidate.agreement,
       })),
+      currentDate: latest?.targetDate ?? null,
+      sessions: sessionRows,
       candidateDescriptions: candidates.slice(0, 7).map((candidate) => ({
         number: candidate.number,
         rationale:
