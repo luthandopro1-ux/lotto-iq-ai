@@ -22,7 +22,11 @@ import {
   claimEarlyBirdPremium,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
-import { getPricingContext, getEarlyBirdStatus } from "@/lib/pricing.functions";
+import {
+  captureWorkspaceCountry,
+  getPricingContext,
+  getEarlyBirdStatus,
+} from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -452,6 +456,7 @@ function EarlyBirdClaim() {
   const claim = async () => {
     setClaiming(true);
     try {
+      await captureWorkspaceCountry();
       const result = await claimEarlyBirdPremium();
       if (result.alreadyClaimed) {
         toast.success("You already claimed early-bird Premium.");
