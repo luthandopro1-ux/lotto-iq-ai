@@ -52,6 +52,11 @@ export interface LedgerRecord {
   matched_count: number;
   strategy_count: number;
   history_depth: number;
+  history_cutoff_date: string | null;
+  history_cutoff_session: SessionKey | null;
+  history_cutoff_draw_id: string | null;
+  model_version: string | null;
+  feature_version: string | null;
   strategy_version: string | null;
   grading: Grading | null;
   actual: { numbers: number[]; booster: number | null } | null;
@@ -89,6 +94,11 @@ export function toLedger(p: Row | null | undefined): LedgerRecord | null {
     matched_count: Number(p["matched_count"] ?? 0),
     strategy_count: Number(p["strategy_count"] ?? 0),
     history_depth: Number(p["history_depth"] ?? 0),
+    history_cutoff_date: (p["history_cutoff_date"] as string | null) ?? null,
+    history_cutoff_session: (p["history_cutoff_session"] as SessionKey | null) ?? null,
+    history_cutoff_draw_id: (p["history_cutoff_draw_id"] as string | null) ?? null,
+    model_version: (p["model_version"] as string | null) ?? null,
+    feature_version: (p["feature_version"] as string | null) ?? null,
     strategy_version: (p["strategy_version"] as string | null) ?? null,
     grading: (p["grading"] as Grading | null) ?? null,
     actual: (p["actual"] as { numbers: number[]; booster: number | null } | null) ?? null,
@@ -292,8 +302,6 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       grading: p.grading as never,
     }));
 
-  const learning = buildLearning(graded, targetDate);
-
   /* ---- 5. lock predictions, in strict session order --------------- */
   const blocked: Record<string, string | null> = {};
   const unresolved: string[] = [];
@@ -329,6 +337,24 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     if (passed) continue; // never invent a prediction after the fact
     if (strategies.length === 0) continue;
 
+    const learning = buildLearning(graded, targetDate, {
+      targetDate,
+      targetSession: session,
+    });
+    const historyBeforeTarget = history
+      .filter(
+        (d) =>
+          d.draw_date < targetDate ||
+          (d.draw_date === targetDate && sessionIndex(d.session) < sessionIndex(session)),
+      )
+      .sort((a, b) =>
+        a.draw_date === b.draw_date
+          ? sessionIndex(b.session) - sessionIndex(a.session)
+          : a.draw_date < b.draw_date
+            ? 1
+            : -1,
+      );
+
     const prediction = buildPrediction(
       strategies,
       { targetDate, targetSession: session, history },
@@ -358,6 +384,11 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       } as never,
       strategy_count: prediction.strategy_count,
       history_depth: prediction.history_depth,
+      history_cutoff_date: historyBeforeTarget[0]?.draw_date ?? null,
+      history_cutoff_session: historyBeforeTarget[0]?.session ?? null,
+      history_cutoff_draw_id: historyBeforeTarget[0]?.id ?? null,
+      model_version: "uk49-ensemble-v1",
+      feature_version: "uk49-history-v1",
       status: "pending",
       session_state: "PREDICTION_READY",
       strategy_version: `${prediction.strategy_count}s/${prediction.history_depth}d`,
@@ -367,7 +398,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
 
     const { data: saved, error: saveError } = await db
       .from("predictions")
-      .upsert(payload, { onConflict: "target_date,target_session", ignoreDuplicates: true })
+      .upsert(payload as never, {
+        onConflict: "target_date,target_session",
+        ignoreDuplicates: true,
+      })
       .select("*")
       .maybeSingle();
     if (saveError) syncErrors.push(`${cfg.label} prediction not saved: ${saveError.message}`);
@@ -378,19 +412,6 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     // read a stored figure instead of recomputing it on every page load.
     try {
       const { computeAndStoreAnalysisSnapshot } = await import("@/lib/analysis.server");
-      const historyBeforeTarget = history
-        .filter(
-          (d) =>
-            d.draw_date < targetDate ||
-            (d.draw_date === targetDate && sessionIndex(d.session) < sessionIndex(session)),
-        )
-        .sort((a, b) =>
-          a.draw_date === b.draw_date
-            ? sessionIndex(b.session) - sessionIndex(a.session)
-            : a.draw_date < b.draw_date
-              ? 1
-              : -1,
-        );
       await computeAndStoreAnalysisSnapshot(db, {
         targetDate,
         targetSession: session,
@@ -455,6 +476,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
   });
 
   const target = nextTarget(now);
+  const nextLearning = buildLearning(graded, targetDate, {
+    targetDate: target.date,
+    targetSession: target.session,
+  });
   const stillMissing: MissingSlot[] = catchup?.stillMissing ?? [];
 
   return {
@@ -471,10 +496,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
         }
       : { recovered: [], stillMissing: [], overdue: [], unresolved },
     learning: {
-      sampleSize: learning.sampleSize,
-      recentHits: learning.recentHits,
-      recentMisses: learning.recentMisses,
-      strategyMultiplier: learning.strategyMultiplier,
+      sampleSize: nextLearning.sampleSize,
+      recentHits: nextLearning.recentHits,
+      recentMisses: nextLearning.recentMisses,
+      strategyMultiplier: nextLearning.strategyMultiplier,
     },
     strategyCount: strategies.length,
     historyDepth: history.length,

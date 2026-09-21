@@ -8,6 +8,22 @@ export const SESSION_LABELS: Record<SessionKey, string> = {
   teatime: "Tea Time",
 };
 
+/** Compare two UK49 draw slots in chronological order. */
+export function compareDrawSlots(
+  a: { draw_date: string; session: SessionKey },
+  b: { draw_date: string; session: SessionKey },
+): number {
+  if (a.draw_date !== b.draw_date) return a.draw_date < b.draw_date ? -1 : 1;
+  return SESSIONS.indexOf(a.session) - SESSIONS.indexOf(b.session);
+}
+
+export function isDrawBefore(
+  a: { draw_date: string; session: SessionKey },
+  b: { draw_date: string; session: SessionKey },
+): boolean {
+  return compareDrawSlots(a, b) < 0;
+}
+
 /** Approximate UK49 draw times (local UK), used for "current session". */
 export const SESSION_HOURS: Record<SessionKey, number> = {
   brunch: 10,
