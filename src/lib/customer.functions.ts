@@ -86,11 +86,82 @@ type QueryBuilder = Promise<QueryResult> & {
 };
 type CustomerDb = { from: (table: string) => QueryBuilder };
 
-function asNumberArray(value: unknown, max: number): number[] {
+/** A UK49 number 1–49, or null if the value isn't a valid one. */
+function toBallNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 49
+    ? value
+    : null;
+}
+
+/**
+ * `predictions.pool` is stored as `PickedNumber[]` (see predict.ts —
+ * `{ n, score, strategies, strategyIds }`), not plain numbers. This
+ * previously filtered with `typeof n === "number"`, which is false for
+ * every element of that shape — pool/hotBalls/coldBalls were silently
+ * empty for every user, on both the free dashboard and Premium
+ * workspace, regardless of whether a prediction row existed. Also
+ * accepts a plain number defensively, in case a caller ever stores a
+ * flat array directly.
+ */
+export function asNumberArray(value: unknown, max: number): number[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 49)
-    .slice(0, max);
+  const result: number[] = [];
+  for (const item of value) {
+    const n =
+      toBallNumber(item) ??
+      (item && typeof item === "object"
+        ? toBallNumber((item as Record<string, unknown>)["n"])
+        : null);
+    if (n !== null) result.push(n);
+    if (result.length >= max) break;
+  }
+  return result;
+}
+
+/**
+ * `predictions.rows` is `PredictionRow[]` — each entry is a compound
+ * betting-line suggestion `{ banker: PickedNumber, pair: [PickedNumber,
+ * PickedNumber], bonus: PickedNumber }` (see predict.ts's
+ * buildPrediction), not a single number and not directly flattenable
+ * the way `asNumberArray` handles `pool`. The dashboard/premium UI
+ * expects a flat, ranked, de-duplicated list of numbers (it calls
+ * `.includes()` and renders each entry as one ball in ranked order —
+ * see dashboard.tsx's "sevenBallRanking" usage), so this pulls
+ * banker → pair partner → bonus out of each row in order, skipping
+ * numbers already surfaced by an earlier (higher-ranked) row.
+ */
+export function flattenRowsToRanking(value: unknown, max: number): number[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<number>();
+  const result: number[] = [];
+  for (const row of value) {
+    if (result.length >= max) break;
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    const pair = Array.isArray(r["pair"]) ? r["pair"] : [];
+    const candidates = [
+      toBallNumber(
+        r["banker"] && typeof r["banker"] === "object"
+          ? (r["banker"] as Record<string, unknown>)["n"]
+          : null,
+      ),
+      toBallNumber(
+        pair[1] && typeof pair[1] === "object" ? (pair[1] as Record<string, unknown>)["n"] : null,
+      ),
+      toBallNumber(
+        r["bonus"] && typeof r["bonus"] === "object"
+          ? (r["bonus"] as Record<string, unknown>)["n"]
+          : null,
+      ),
+    ];
+    for (const n of candidates) {
+      if (n !== null && !seen.has(n) && result.length < max) {
+        seen.add(n);
+        result.push(n);
+      }
+    }
+  }
+  return result;
 }
 function asCandidates(value: unknown): PremiumCandidate[] {
   if (!Array.isArray(value)) return [];
@@ -181,7 +252,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
     const predictionRows = Array.isArray(predictions) ? predictions : [];
     const formulaRows = Array.isArray(formulas) ? formulas : [];
     const prediction = (predictionRows[0] ?? null) as Row | null;
-    const rows = prediction ? asNumberArray(prediction["rows"], 7) : [];
+    const rows = prediction ? flattenRowsToRanking(prediction["rows"], 7) : [];
     const pool = prediction ? asNumberArray(prediction["pool"], 14) : [];
     return {
       role: accessContext.role,
@@ -296,7 +367,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
     const analysis = Array.isArray(analyses) && analyses[0] ? analyses[0] : null;
     const candidates = asCandidates(analysis?.["top_numbers"]);
     const pool = asNumberArray(prediction?.["pool"], 14);
-    const ranking = asNumberArray(prediction?.["rows"], 7);
+    const ranking = flattenRowsToRanking(prediction?.["rows"], 7);
     return {
       formulaLimit: 5,
       noAdvertisements: true,
@@ -330,4 +401,32 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
             : "Candidate retained in the latest stored analysis snapshot.",
       })),
     };
+  });
+
+// Narrow RPC surface for claim_early_bird_premium -- not in the
+// generated Supabase types (predates this migration), same reasoning
+// as the other narrow RPC types in this codebase.
+type EarlyBirdClaimDb = {
+  rpc: (fn: "claim_early_bird_premium") => Promise<{
+    data: { already_claimed: boolean; claimed: boolean } | null;
+    error: { message: string } | null;
+  }>;
+};
+
+/**
+ * Claims one of the first 1,000 early-bird Premium slots for the caller's
+ * own workspace, if any remain. No billing provider is connected yet
+ * (see premium.tsx), so this is an honest direct entitlement grant --
+ * not a discount applied through checkout, since there is no checkout.
+ * Idempotent: calling it again after a successful claim just returns
+ * already_claimed: true.
+ */
+export const claimEarlyBirdPremium = createServerFn({ method: "POST" })
+  .middleware([requireAccessContext])
+  .handler(async ({ context }): Promise<{ alreadyClaimed: boolean; claimed: boolean }> => {
+    const { data, error } = await (context.supabase as unknown as EarlyBirdClaimDb).rpc(
+      "claim_early_bird_premium",
+    );
+    if (error) throw new Error(error.message);
+    return { alreadyClaimed: data?.already_claimed ?? false, claimed: data?.claimed ?? false };
   });

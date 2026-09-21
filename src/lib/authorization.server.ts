@@ -78,7 +78,7 @@ export async function resolveAccessContext(
 
   const entitlement = await db
     .from("workspace_entitlements")
-    .select("plan_code,status,beta_access,beta_expires_at")
+    .select("plan_code,status,source,early_bird_expires_at,current_period_end")
     .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (entitlement.error) {
@@ -89,10 +89,14 @@ export async function resolveAccessContext(
   const planStatus = (entitlement.data?.["status"] as string | undefined) ?? null;
   const isActivePremium =
     planCode === "premium" && (planStatus === "active" || planStatus === "trialing");
+  const betaExpiresAt =
+    typeof entitlement.data?.["early_bird_expires_at"] === "string"
+      ? String(entitlement.data["early_bird_expires_at"])
+      : null;
   const betaAccess =
-    entitlement.data?.["beta_access"] === true &&
-    typeof entitlement.data?.["beta_expires_at"] === "string" &&
-    new Date(entitlement.data["beta_expires_at"] as string).getTime() > Date.now();
+    entitlement.data?.["source"] === "early_bird_promo" &&
+    betaExpiresAt !== null &&
+    new Date(betaExpiresAt).getTime() > Date.now();
   const role: AccessRole = isActivePremium || betaAccess ? "premium" : "free";
 
   return {
@@ -102,10 +106,7 @@ export async function resolveAccessContext(
     planCode: betaAccess ? "premium" : planCode,
     planStatus: betaAccess ? "beta" : planStatus,
     betaAccess,
-    betaExpiresAt:
-      typeof entitlement.data?.["beta_expires_at"] === "string"
-        ? String(entitlement.data["beta_expires_at"])
-        : null,
+    betaExpiresAt,
   };
 }
 

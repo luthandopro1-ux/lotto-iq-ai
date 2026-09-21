@@ -7,7 +7,13 @@ import {
   sessionIndex,
   type PickedNumber,
 } from "@/lib/predict";
-import { drawNumbers, type Draw, type SessionKey, type Strategy } from "@/lib/uk49";
+import {
+  compareDrawSlots,
+  drawNumbers,
+  type Draw,
+  type SessionKey,
+  type Strategy,
+} from "@/lib/uk49";
 import type { Db } from "@/lib/db.server";
 
 /**
@@ -142,15 +148,9 @@ export interface RunBacktestOptions {
  * reusable for tests.
  */
 export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
-  const { dateFrom, dateTo, strategies, simulations = 400 } = options;
+  const { dateFrom, dateTo, strategies, simulations = 150 } = options;
 
-  const chronological = [...options.history].sort((a, b) =>
-    a.draw_date === b.draw_date
-      ? sessionIndex(a.session) - sessionIndex(b.session)
-      : a.draw_date < b.draw_date
-        ? -1
-        : 1,
-  );
+  const chronological = [...options.history].sort(compareDrawSlots);
 
   const targets = chronological.filter((d) => d.draw_date >= dateFrom && d.draw_date <= dateTo);
 
@@ -176,12 +176,7 @@ export function evaluateBacktest(options: RunBacktestOptions): BacktestResults {
   }[] = [];
 
   for (const target of targets) {
-    const before = chronological.filter(
-      (d) =>
-        d.draw_date < target.draw_date ||
-        (d.draw_date === target.draw_date &&
-          sessionIndex(d.session) < sessionIndex(target.session)),
-    );
+    const before = chronological.filter((d) => compareDrawSlots(d, target) < 0);
     if (before.length < 15 || strategies.length === 0) continue;
 
     const actual = new Set(drawNumbers(target));

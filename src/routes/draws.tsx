@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell, Panel } from "@/components/AppShell";
+import { AppShell, Ball, Panel } from "@/components/AppShell";
 import { SyncPanel } from "@/components/SyncPanel";
 import { smartImportDraws, type ParsedDraw } from "@/lib/ai.functions";
 import { saveDraws, deleteDraw } from "@/lib/draws.functions";
@@ -203,12 +203,10 @@ function DrawsPage() {
                     <span className="w-24 font-mono">{d.draw_date}</span>
                     <span className="w-20 text-primary">{SESSION_LABELS[d.session]}</span>
                     {d.numbers.map((n, j) => (
-                      <span key={j} className="ball size-7 text-[11px]">
-                        {n}
-                      </span>
+                      <Ball key={j} n={n} className="size-7 text-[11px]" />
                     ))}
                     {d.booster != null && (
-                      <span className="ball ball-accent size-7 text-[11px]">{d.booster}</span>
+                      <Ball n={d.booster} variant="accent" className="size-7 text-[11px]" />
                     )}
                   </div>
                 ))}
@@ -284,7 +282,7 @@ function DrawsPage() {
                 </span>
               ))}
               {d.booster != null && (
-                <span className="ball ball-accent size-7 text-[11px]">{d.booster}</span>
+                <Ball n={d.booster} variant="accent" className="size-7 text-[11px]" />
               )}
               <button
                 onClick={() => remove.mutate(d.id)}

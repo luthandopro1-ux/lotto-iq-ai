@@ -2,12 +2,24 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { adminGuard } from "@/lib/admin-guard";
 
-const RunInput = z.object({
-  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  strategyIds: z.array(z.string()).optional(),
-  label: z.string().max(120).optional(),
-});
+const MAX_BACKTEST_DAYS = 120;
+
+const RunInput = z
+  .object({
+    dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    strategyIds: z.array(z.string()).optional(),
+    label: z.string().max(120).optional(),
+  })
+  .refine(
+    (v) => {
+      const days = (Date.parse(v.dateTo) - Date.parse(v.dateFrom)) / 86_400_000;
+      return days >= 0 && days <= MAX_BACKTEST_DAYS;
+    },
+    {
+      message: `Backtest range can't exceed ${MAX_BACKTEST_DAYS} days per run — Cloudflare Workers meter CPU time per request, and walk-forward testing a full year in one call exceeds that budget. Run it in shorter windows (e.g. quarterly) instead.`,
+    },
+  );
 
 /** Runs the Model A–E walk-forward comparison and saves it to `backtests`. */
 export const runBacktest = createServerFn({ method: "POST" })
@@ -24,7 +36,10 @@ export const runBacktest = createServerFn({ method: "POST" })
         .select("*")
         .lte("draw_date", data.dateTo)
         .order("draw_date", { ascending: false })
-        .limit(2000),
+        // Bounds not just the tested range but each test draw's own
+        // lookback window — the real CPU driver, since every one of
+        // the (now capped) test draws re-scans this whole set.
+        .limit(800),
       db.from("strategies").select("*"),
     ]);
 

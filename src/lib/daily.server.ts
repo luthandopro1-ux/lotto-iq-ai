@@ -14,6 +14,28 @@ import {
 import type { CatchUpReport, MissingSlot } from "@/lib/ingest.server";
 import type { Grading, PickedNumber, PredictionRow } from "@/lib/predict";
 
+// Narrow RPC surface for upsert_strategy_predictions. Not in the
+// generated Supabase types (src/integrations/supabase/types.ts) because
+// that file is a snapshot from before this migration existed and hasn't
+// been regenerated since — same reason authorization.server.ts declares
+// its own narrow type for the is_administrator RPC rather than using
+// the full generated Database type for that call.
+type StrategyPredictionsRpc = {
+  rpc: (
+    fn: "upsert_strategy_predictions",
+    args: {
+      p_draw_id: string;
+      p_draw_time: string;
+      p_predictions: Array<{
+        strategy_id: string;
+        predicted_numbers: number[];
+        predicted_banker: number | null;
+        predicted_bonus: number | null;
+      }>;
+    },
+  ) => Promise<{ error: { message: string } | null }>;
+};
+
 export interface LedgerRecord {
   id: string;
   drawId: string;
@@ -30,6 +52,11 @@ export interface LedgerRecord {
   matched_count: number;
   strategy_count: number;
   history_depth: number;
+  history_cutoff_date: string | null;
+  history_cutoff_session: SessionKey | null;
+  history_cutoff_draw_id: string | null;
+  model_version: string | null;
+  feature_version: string | null;
   strategy_version: string | null;
   grading: Grading | null;
   actual: { numbers: number[]; booster: number | null } | null;
@@ -67,6 +94,11 @@ export function toLedger(p: Row | null | undefined): LedgerRecord | null {
     matched_count: Number(p["matched_count"] ?? 0),
     strategy_count: Number(p["strategy_count"] ?? 0),
     history_depth: Number(p["history_depth"] ?? 0),
+    history_cutoff_date: (p["history_cutoff_date"] as string | null) ?? null,
+    history_cutoff_session: (p["history_cutoff_session"] as SessionKey | null) ?? null,
+    history_cutoff_draw_id: (p["history_cutoff_draw_id"] as string | null) ?? null,
+    model_version: (p["model_version"] as string | null) ?? null,
+    feature_version: (p["feature_version"] as string | null) ?? null,
     strategy_version: (p["strategy_version"] as string | null) ?? null,
     grading: (p["grading"] as Grading | null) ?? null,
     actual: (p["actual"] as { numbers: number[]; booster: number | null } | null) ?? null,
@@ -126,7 +158,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
   const { serverDb } = await import("@/lib/db.server");
   const { buildPrediction, buildLearning, gradePrediction, sessionIndex, dailySequence } =
     await import("@/lib/predict");
-  const db = serverDb();
+  const db = serverDb(true);
 
   const now = new Date();
   const targetDate = data.date ?? ukDate(now);
@@ -146,15 +178,30 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     }
   }
 
-  const [{ data: drawRows }, { data: strategyRows }, { data: predictionRows }] = await Promise.all([
+  const [
+    { data: drawRows, error: drawRowsError },
+    { data: strategyRows, error: strategyRowsError },
+    { data: predictionRows, error: predictionRowsError },
+  ] = await Promise.all([
     db.from("draws").select("*").order("draw_date", { ascending: false }).limit(600),
     db.from("strategies").select("*").eq("enabled", true),
     db.from("predictions").select("*").order("target_date", { ascending: false }).limit(60),
   ]);
+  if (drawRowsError)
+    syncErrors.push(`Failed to load draws for board build: ${drawRowsError.message}`);
+  if (strategyRowsError)
+    syncErrors.push(`Failed to load strategies for board build: ${strategyRowsError.message}`);
+  if (predictionRowsError)
+    syncErrors.push(`Failed to load predictions for board build: ${predictionRowsError.message}`);
 
   const history = (drawRows ?? []) as never[] as import("@/lib/uk49").Draw[];
   const strategies = (strategyRows ?? []) as never[] as import("@/lib/uk49").Strategy[];
   const predictions = predictionRows ?? [];
+  if (strategies.length === 0 && !strategyRowsError) {
+    syncErrors.push(
+      "No enabled strategies found — every session will be skipped and no prediction will be written this run.",
+    );
+  }
 
   const drawFor = (date: string, session: string) =>
     history.find((d) => d.draw_date === date && d.session === session);
@@ -206,6 +253,35 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       .single();
     if (updated) Object.assign(p, updated);
     gradedNow += 1;
+
+    try {
+      const { latestAnalysisSnapshot } = await import("@/lib/analysis.server");
+      const snapshot = await latestAnalysisSnapshot(
+        db,
+        p.target_date,
+        p.target_session as SessionKey,
+      );
+      if (snapshot && snapshot.breakdown.length > 0) {
+        const { error: spError } = await (db as unknown as StrategyPredictionsRpc).rpc(
+          "upsert_strategy_predictions",
+          {
+            p_draw_id: draw.id,
+            p_draw_time: SESSION_SCHEDULE[p.target_session as SessionKey].ukTime,
+            p_predictions: snapshot.breakdown.map((b) => ({
+              strategy_id: b.strategyId,
+              predicted_numbers: b.numbers,
+              predicted_banker: null,
+              predicted_bonus: null,
+            })),
+          },
+        );
+        if (spError) syncErrors.push(`strategy_predictions not saved: ${spError.message}`);
+      }
+    } catch (err) {
+      syncErrors.push(
+        `strategy_predictions not saved: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   /* ---- 4. learn --------------------------------------------------- */
@@ -225,8 +301,6 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       target_session: p.target_session as SessionKey,
       grading: p.grading as never,
     }));
-
-  const learning = buildLearning(graded, targetDate);
 
   /* ---- 5. lock predictions, in strict session order --------------- */
   const blocked: Record<string, string | null> = {};
@@ -263,6 +337,24 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     if (passed) continue; // never invent a prediction after the fact
     if (strategies.length === 0) continue;
 
+    const learning = buildLearning(graded, targetDate, {
+      targetDate,
+      targetSession: session,
+    });
+    const historyBeforeTarget = history
+      .filter(
+        (d) =>
+          d.draw_date < targetDate ||
+          (d.draw_date === targetDate && sessionIndex(d.session) < sessionIndex(session)),
+      )
+      .sort((a, b) =>
+        a.draw_date === b.draw_date
+          ? sessionIndex(b.session) - sessionIndex(a.session)
+          : a.draw_date < b.draw_date
+            ? 1
+            : -1,
+      );
+
     const prediction = buildPrediction(
       strategies,
       { targetDate, targetSession: session, history },
@@ -292,6 +384,11 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       } as never,
       strategy_count: prediction.strategy_count,
       history_depth: prediction.history_depth,
+      history_cutoff_date: historyBeforeTarget[0]?.draw_date ?? null,
+      history_cutoff_session: historyBeforeTarget[0]?.session ?? null,
+      history_cutoff_draw_id: historyBeforeTarget[0]?.id ?? null,
+      model_version: "uk49-ensemble-v1",
+      feature_version: "uk49-history-v1",
       status: "pending",
       session_state: "PREDICTION_READY",
       strategy_version: `${prediction.strategy_count}s/${prediction.history_depth}d`,
@@ -301,7 +398,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
 
     const { data: saved, error: saveError } = await db
       .from("predictions")
-      .upsert(payload, { onConflict: "target_date,target_session", ignoreDuplicates: true })
+      .upsert(payload as never, {
+        onConflict: "target_date,target_session",
+        ignoreDuplicates: true,
+      })
       .select("*")
       .maybeSingle();
     if (saveError) syncErrors.push(`${cfg.label} prediction not saved: ${saveError.message}`);
@@ -312,19 +412,6 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     // read a stored figure instead of recomputing it on every page load.
     try {
       const { computeAndStoreAnalysisSnapshot } = await import("@/lib/analysis.server");
-      const historyBeforeTarget = history
-        .filter(
-          (d) =>
-            d.draw_date < targetDate ||
-            (d.draw_date === targetDate && sessionIndex(d.session) < sessionIndex(session)),
-        )
-        .sort((a, b) =>
-          a.draw_date === b.draw_date
-            ? sessionIndex(b.session) - sessionIndex(a.session)
-            : a.draw_date < b.draw_date
-              ? 1
-              : -1,
-        );
       await computeAndStoreAnalysisSnapshot(db, {
         targetDate,
         targetSession: session,
@@ -389,6 +476,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
   });
 
   const target = nextTarget(now);
+  const nextLearning = buildLearning(graded, targetDate, {
+    targetDate: target.date,
+    targetSession: target.session,
+  });
   const stillMissing: MissingSlot[] = catchup?.stillMissing ?? [];
 
   return {
@@ -405,10 +496,10 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
         }
       : { recovered: [], stillMissing: [], overdue: [], unresolved },
     learning: {
-      sampleSize: learning.sampleSize,
-      recentHits: learning.recentHits,
-      recentMisses: learning.recentMisses,
-      strategyMultiplier: learning.strategyMultiplier,
+      sampleSize: nextLearning.sampleSize,
+      recentHits: nextLearning.recentHits,
+      recentMisses: nextLearning.recentMisses,
+      strategyMultiplier: nextLearning.strategyMultiplier,
     },
     strategyCount: strategies.length,
     historyDepth: history.length,
@@ -419,7 +510,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
 /** Read-only view of the state machine, straight from the database. */
 export async function readBoard(date?: string) {
   const { serverDb } = await import("@/lib/db.server");
-  const db = serverDb();
+  const db = serverDb(true);
   const now = new Date();
   const targetDate = date ?? ukDate(now);
 

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Database,
@@ -11,19 +12,92 @@ import {
   Compass,
   Globe,
   KeyRound,
+  UserRound,
   Microscope,
   ShieldCheck,
   Crown,
+  ChevronDown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { getStoredAdminKey, setStoredAdminKey } from "@/integrations/admin/client-middleware";
 import { BrandMark } from "@/components/BrandMark";
 import { BrandCopyright } from "@/components/BrandCopyright";
+import { UK49_COLOUR_LABELS, uk49ColourForNumber } from "@/lib/uk49-colours";
+import { supabase } from "@/integrations/supabase/client";
+import { getAccessContext } from "@/lib/customer.functions";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/premium", label: "Premium", icon: Crown },
+  { to: "/account", label: "Account", icon: UserRound },
 ] as const;
+
+// Operator-only tools. These routes still exist and still work, but are
+// no longer in the general client nav (see the corporate/client access
+// security work) — administrators still need a path to them, so they
+// show up here instead, gated on the same is_administrator() check
+// /admin and /premium already use.
+const operatorNav = [
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
+  { to: "/predictions", label: "Predictions", icon: Target },
+  { to: "/history", label: "Ledger", icon: ScrollText },
+  { to: "/draws", label: "Draws", icon: Database },
+  { to: "/strategies", label: "Strategies", icon: Library },
+  { to: "/analysis", label: "Analysis", icon: Sparkles },
+  { to: "/ensemble", label: "Ensemble", icon: BrainCircuit },
+  { to: "/structure", label: "Structure", icon: Compass },
+  { to: "/backtest", label: "Backtest", icon: History },
+  { to: "/russia", label: "Russia", icon: Globe },
+  { to: "/research", label: "Research", icon: Microscope },
+] as const;
+
+function OperatorToolsMenu() {
+  const [open, setOpen] = useState(false);
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
+  const { data: access } = useQuery({
+    queryKey: ["access-context"],
+    queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
+  });
+
+  if (access?.role !== "administrator") return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+      >
+        <ShieldCheck className="size-4" />
+        Operator Tools
+        <ChevronDown className="size-3.5" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-11 z-50 grid w-64 grid-cols-2 gap-1 rounded-xl border border-border bg-popover p-2 shadow-lg">
+          {operatorNav.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground data-[status=active]:bg-primary/15 data-[status=active]:text-primary"
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AdminKeyControl() {
   const [open, setOpen] = useState(false);
@@ -96,6 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </nav>
+            <OperatorToolsMenu />
             <AdminKeyControl />
           </div>
         </div>
@@ -145,19 +220,20 @@ export function Panel({
 export function Ball({
   n,
   variant = "default",
+  className = "",
+  title,
 }: {
   n: number;
   variant?: "default" | "primary" | "accent";
+  className?: string;
+  title?: string;
 }) {
+  const colour = uk49ColourForNumber(n);
   return (
     <span
-      className={
-        variant === "primary"
-          ? "ball ball-primary"
-          : variant === "accent"
-            ? "ball ball-accent"
-            : "ball"
-      }
+      className={`ball ball-uk-${colour} ${variant === "primary" ? "ball-primary" : variant === "accent" ? "ball-accent" : ""} ${className}`}
+      title={title ?? `UK49 ${UK49_COLOUR_LABELS[colour]} ball · ${n}`}
+      aria-label={`Number ${n}, ${UK49_COLOUR_LABELS[colour]} UK49 ball`}
     >
       {n}
     </span>

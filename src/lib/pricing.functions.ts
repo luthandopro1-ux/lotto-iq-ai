@@ -8,15 +8,6 @@ export type PricingContext = {
   localizedConversionAvailable: false;
 };
 
-export type BetaStatus = {
-  enabled: boolean;
-  label: string;
-  starts_at: string;
-  ends_at: string;
-  max_workspaces: number;
-  registered_workspaces: number;
-};
-
 export const getPricingContext = createServerFn({ method: "GET" }).handler(
   async (): Promise<PricingContext> => {
     const request = getRequest();
@@ -33,25 +24,24 @@ export const getPricingContext = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export const getBetaStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<BetaStatus | null> => {
-    const { supabase } = await import("@/integrations/supabase/client");
-    const db = supabase as unknown as {
-      rpc: (
-        name: "get_beta_status",
-      ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    };
-    const { data, error } = await db.rpc("get_beta_status");
-    if (error) throw new Error(`Failed to load beta status: ${error.message}`);
-    if (!data || typeof data !== "object") return null;
-    const value = data as Record<string, unknown>;
-    return {
-      enabled: value["enabled"] === true,
-      label: String(value["label"] ?? "100% Early Bird Beta"),
-      starts_at: String(value["starts_at"] ?? ""),
-      ends_at: String(value["ends_at"] ?? ""),
-      max_workspaces: Number(value["max_workspaces"] ?? 1000),
-      registered_workspaces: Number(value["registered_workspaces"] ?? 0),
-    };
+export type EarlyBirdStatus = { limit: number; claimed: number; remaining: number };
+
+// Narrow RPC surface for get_early_bird_status -- not in the generated
+// Supabase types (predates this migration, same reason authorization.server.ts
+// and daily.server.ts declare their own narrow types for their RPCs).
+type EarlyBirdStatusDb = {
+  rpc: (
+    fn: "get_early_bird_status",
+  ) => Promise<{ data: EarlyBirdStatus | null; error: { message: string } | null }>;
+};
+
+/** Public: how many early-bird Premium slots remain, out of 1,000. No auth required. */
+export const getEarlyBirdStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<EarlyBirdStatus> => {
+    const { serverDb } = await import("@/lib/db.server");
+    const db = serverDb() as unknown as EarlyBirdStatusDb;
+    const { data, error } = await db.rpc("get_early_bird_status");
+    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000 };
+    return data;
   },
 );

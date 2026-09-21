@@ -109,11 +109,21 @@ export const getRussiaDashboard = createServerFn({ method: "GET" })
     };
   });
 
+const MAX_RUSSIA_BACKTEST_DAYS = 180;
+
 const RunBacktestInput = GameCodeInput.extend({
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   label: z.string().max(120).optional(),
-});
+}).refine(
+  (v) => {
+    const days = (Date.parse(v.dateTo) - Date.parse(v.dateFrom)) / 86_400_000;
+    return days >= 0 && days <= MAX_RUSSIA_BACKTEST_DAYS;
+  },
+  {
+    message: `Backtest range can't exceed ${MAX_RUSSIA_BACKTEST_DAYS} days per run — Cloudflare Workers meter CPU time per request. Run it in shorter windows instead.`,
+  },
+);
 
 export const runRussiaBacktest = createServerFn({ method: "POST" })
   .middleware([adminGuard])

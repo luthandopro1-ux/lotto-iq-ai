@@ -19,10 +19,12 @@ import {
   getCustomerDashboard,
   getPremiumWorkspace,
   saveCustomerFormula,
+  claimEarlyBirdPremium,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
-import { getBetaStatus, getPricingContext } from "@/lib/pricing.functions";
+import { getPricingContext, getEarlyBirdStatus } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
@@ -39,7 +41,20 @@ function PremiumPage() {
   const [formulaName, setFormulaName] = useState("");
   const [formulaExpression, setFormulaExpression] = useState("");
   const [saving, setSaving] = useState(false);
-  const access = useQuery({ queryKey: ["access-context"], queryFn: () => getAccessContext() });
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
+  const access = useQuery({
+    queryKey: ["access-context"],
+    queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
+  });
   const premium = useQuery({
     queryKey: ["premium-workspace"],
     queryFn: () => getPremiumWorkspace(),
@@ -51,7 +66,6 @@ function PremiumPage() {
     enabled: access.data?.role === "premium" || access.data?.role === "administrator",
   });
   const pricing = useQuery({ queryKey: ["pricing-context"], queryFn: () => getPricingContext() });
-  const beta = useQuery({ queryKey: ["beta-status"], queryFn: () => getBetaStatus() });
 
   const saveFormula = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,20 +83,30 @@ function PremiumPage() {
     }
   };
 
-  if (access.isLoading)
+  if (session.isLoading || (session.data && access.isLoading))
     return (
       <PageShell>
         <LoadingState />
       </PageShell>
     );
+  if (session.error || access.error)
+    return (
+      <PageShell>
+        <UpgradeState
+          signedIn={Boolean(session.data)}
+          title="Premium access could not be verified"
+          detail="Refresh the page or return to secure account access before trying again."
+        />
+      </PageShell>
+    );
   if (
-    access.error ||
+    !session.data ||
     !access.data ||
     (access.data.role !== "premium" && access.data.role !== "administrator")
   )
     return (
       <PageShell>
-        <UpgradeState signedIn={Boolean(access.data)} />
+        <UpgradeState signedIn={Boolean(session.data)} />
       </PageShell>
     );
   const workspace = premium.data;
@@ -108,34 +132,6 @@ function PremiumPage() {
           <ShieldCheck className="size-4" /> No advertisements
         </div>
       </header>
-
-      {beta.data?.enabled && (
-        <section className="mb-6 rounded-3xl border border-amber-300/30 bg-amber-300/10 p-5 sm:p-6">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">
-                {beta.data.label}
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-amber-50">
-                100% free during the beta period
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-100/75">
-                Early Bird registration gives approved beta members access to the Premium workspace
-                for testing. Prices remain visible for the future paid launch; no payment is taken
-                during beta.
-              </p>
-            </div>
-            <div className="shrink-0 rounded-2xl border border-amber-200/20 bg-black/10 px-4 py-3 text-xs text-amber-100/80">
-              <strong className="text-amber-50">
-                {beta.data.registered_workspaces.toLocaleString()} /{" "}
-                {beta.data.max_workspaces.toLocaleString()}
-              </strong>
-              <br />
-              beta workspaces registered
-            </div>
-          </div>
-        </section>
-      )}
 
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -184,9 +180,9 @@ function PremiumPage() {
               )}
               <button
                 disabled
-                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2.5 text-xs font-semibold text-amber-100/70"
+                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
               >
-                <Check className="size-3.5" /> Free during Early Bird Beta
+                <LockKeyhole className="size-3.5" /> Checkout pending provider
               </button>
             </div>
           ))}
@@ -414,15 +410,24 @@ function LoadingState() {
     </div>
   );
 }
-function UpgradeState({ signedIn }: { signedIn: boolean }) {
+function UpgradeState({
+  signedIn,
+  title = "Premium workspace access",
+  detail,
+}: {
+  signedIn: boolean;
+  title?: string;
+  detail?: string;
+}) {
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-primary/20 bg-primary/10 p-8 text-center sm:p-12">
       <LockKeyhole className="mx-auto size-10 text-primary" />
-      <h1 className="mt-5 font-display text-3xl font-bold">Premium workspace access</h1>
+      <h1 className="mt-5 font-display text-3xl font-bold">{title}</h1>
       <p className="mt-3 leading-7 text-muted-foreground">
-        {signedIn
-          ? "Your account is currently on the Free plan. Premium analysis becomes available after a verified entitlement is active."
-          : "Sign in to view your membership and Premium access state."}
+        {detail ??
+          (signedIn
+            ? "Your account is currently on the Free plan. Premium analysis becomes available after a verified entitlement is active."
+            : "Sign in to view your membership and Premium access state.")}
       </p>
       <Link
         to={signedIn ? "/premium" : "/account"}
@@ -431,6 +436,62 @@ function UpgradeState({ signedIn }: { signedIn: boolean }) {
         {signedIn ? "Refresh membership" : "Sign in or create account"}{" "}
         <ArrowRight className="size-4" />
       </Link>
+      {signedIn && <EarlyBirdClaim />}
+    </div>
+  );
+}
+
+function EarlyBirdClaim() {
+  const queryClient = useQueryClient();
+  const [claiming, setClaiming] = useState(false);
+  const status = useQuery({
+    queryKey: ["early-bird-status"],
+    queryFn: () => getEarlyBirdStatus(),
+  });
+
+  const claim = async () => {
+    setClaiming(true);
+    try {
+      const result = await claimEarlyBirdPremium();
+      if (result.alreadyClaimed) {
+        toast.success("You already claimed early-bird Premium.");
+      } else {
+        toast.success("Early-bird Premium claimed — welcome aboard!");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["access-context"] });
+      await queryClient.invalidateQueries({ queryKey: ["early-bird-status"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not claim early-bird Premium");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  if (status.isLoading) return null;
+  const remaining = status.data?.remaining ?? 0;
+  if (remaining <= 0) return null;
+
+  return (
+    <div className="mt-8 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-5 text-left">
+      <div className="flex items-center gap-2 text-emerald-300">
+        <Sparkles className="size-4" />
+        <p className="text-xs font-bold uppercase tracking-widest">Early-bird — 100% off</p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        The first 1,000 clients get full Premium access at no cost, to help test the software before
+        billing goes live. No card, no checkout — one click.
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">{remaining}</span> of{" "}
+        {status.data?.limit ?? 1000} spots remaining
+      </p>
+      <button
+        onClick={claim}
+        disabled={claiming}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 disabled:opacity-60"
+      >
+        {claiming ? "Claiming…" : "Claim free Premium"}
+      </button>
     </div>
   );
 }

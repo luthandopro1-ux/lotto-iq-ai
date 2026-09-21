@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell, Panel } from "@/components/AppShell";
+import { AppShell, Ball, Panel } from "@/components/AppShell";
 import { SyncLog } from "@/components/SyncLog";
 import { SyncPanel } from "@/components/SyncPanel";
 import {
@@ -21,7 +21,12 @@ import {
 import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
 import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
-import { getBetaStatus } from "@/lib/pricing.functions";
+import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functions";
+import { buildPrediction } from "@/lib/predict";
+import { computeStats } from "@/lib/stats";
+import { buildEnsemble } from "@/lib/ensemble";
+import { currentSession, type Draw, type Strategy } from "@/lib/uk49";
+import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -38,6 +43,15 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminDashboard() {
+  const session = useQuery({
+    queryKey: ["browser-session"],
+    queryFn: async () => {
+      const result = await supabase.auth.getSession();
+      if (result.error) throw result.error;
+      return result.data.session;
+    },
+    enabled: typeof window !== "undefined",
+  });
   const {
     data: access,
     isLoading: accessLoading,
@@ -45,6 +59,7 @@ function AdminDashboard() {
   } = useQuery({
     queryKey: ["access-context"],
     queryFn: () => getAccessContext(),
+    enabled: Boolean(session.data),
   });
   const isAdministrator = access?.role === "administrator";
 
@@ -71,21 +86,25 @@ function AdminDashboard() {
     enabled: isAdministrator,
   });
 
-  const { data: draws = [], isLoading: drawsLoading } = useQuery({
-    queryKey: ["admin", "draws-count"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("draws").select("id").limit(1000);
-      if (error) throw error;
-      return data ?? [];
-    },
+  const { data: earlyBird } = useQuery({
+    queryKey: ["admin", "early-bird"],
+    queryFn: () => getEarlyBirdStatus(),
     refetchInterval: 30_000,
     enabled: isAdministrator,
   });
 
-  const { data: beta } = useQuery({
-    queryKey: ["admin", "beta-status"],
-    queryFn: () => getBetaStatus(),
-    refetchInterval: 60_000,
+  const { data: draws = [], isLoading: drawsLoading } = useQuery({
+    queryKey: ["admin", "draws-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("draws")
+        .select("*")
+        .order("draw_date", { ascending: false })
+        .limit(400);
+      if (error) throw error;
+      return (data ?? []) as unknown as Draw[];
+    },
+    refetchInterval: 30_000,
     enabled: isAdministrator,
   });
 
@@ -94,10 +113,10 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("strategies")
-        .select("id,name,enabled,category,rule_type,updated_at")
+        .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as Strategy[];
     },
     refetchInterval: 30_000,
     enabled: isAdministrator,
@@ -121,8 +140,38 @@ function AdminDashboard() {
   const [targetUserId, setTargetUserId] = useState("");
   const [accessReason, setAccessReason] = useState("");
   const [accessActionPending, setAccessActionPending] = useState(false);
+  const [researchPending, setResearchPending] = useState(false);
 
-  if (accessLoading)
+  const {
+    data: researchReports = [],
+    isLoading: researchLoading,
+    refetch: refetchResearch,
+  } = useQuery({
+    queryKey: ["research-reports"],
+    queryFn: () => listResearchReportsFn(),
+    enabled: isAdministrator,
+  });
+
+  const activeStrategies = strategies.filter((strategy) => strategy.enabled);
+  const liveTargetDate = new Date().toISOString().slice(0, 10);
+  const liveTargetSession = currentSession();
+  const liveHistory = draws as Draw[];
+  const livePrediction = useMemo(
+    () =>
+      buildPrediction(activeStrategies, {
+        targetDate: liveTargetDate,
+        targetSession: liveTargetSession,
+        history: liveHistory,
+      }),
+    [activeStrategies, liveHistory, liveTargetDate, liveTargetSession],
+  );
+  const liveStats = useMemo(() => computeStats(liveHistory, { simulations: 500 }), [liveHistory]);
+  const liveEnsemble = useMemo(
+    () => buildEnsemble(livePrediction, liveStats, 0.7),
+    [livePrediction, liveStats],
+  );
+
+  if (session.isLoading || (session.data && accessLoading))
     return (
       <AppShell>
         <div className="py-20 text-center text-sm text-muted-foreground">
@@ -130,21 +179,34 @@ function AdminDashboard() {
         </div>
       </AppShell>
     );
-  if (accessError || !isAdministrator)
+  if (session.error || accessError || !session.data || !isAdministrator)
     return (
       <AppShell>
         <div className="mx-auto max-w-lg py-20 text-center">
           <LockKeyhole className="mx-auto size-10 text-destructive" />
-          <h1 className="mt-5 font-display text-2xl font-bold">Administrator access required</h1>
+          <h1 className="mt-5 font-display text-2xl font-bold">
+            {session.error || accessError
+              ? "Administrator access could not be verified"
+              : "Administrator access required"}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            This is a protected operator console. Your customer account cannot read platform
-            operations or private strategy definitions.
+            {session.data
+              ? "This is a protected operator console. Your customer account cannot read platform operations or private strategy definitions."
+              : "Sign in with an allowlisted administrator account to open the Lum Tech Solutions operator console."}
           </p>
+          {!session.data && (
+            <Link
+              to="/account"
+              className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Open secure account access
+            </Link>
+          )}
         </div>
       </AppShell>
     );
 
-  const activeStrategies = strategies.filter((strategy) => strategy.enabled).length;
+  const activeStrategyCount = activeStrategies.length;
   const gradedPredictions = predictions.filter((prediction) => prediction.outcome != null).length;
   const activeEstimate = capacity?.current.active_users_estimate ?? 0;
   const capacityPercent = capacity?.current.capacity_percent ?? 0;
@@ -167,6 +229,19 @@ function AdminDashboard() {
     }
   };
 
+  const runResearchNow = async () => {
+    setResearchPending(true);
+    try {
+      await triggerResearchNow();
+      toast.success("Research run started.");
+      await refetchResearch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Research trigger failed");
+    } finally {
+      setResearchPending(false);
+    }
+  };
+
   const stats = [
     {
       label: "Draw rows sampled",
@@ -175,7 +250,7 @@ function AdminDashboard() {
     },
     {
       label: "Active strategies",
-      value: strategiesLoading ? "…" : activeStrategies,
+      value: strategiesLoading ? "…" : activeStrategyCount,
       icon: Library,
     },
     { label: "Recent predictions", value: predictions.length, icon: Target },
@@ -201,31 +276,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {beta?.enabled && (
-        <section className="mb-6 rounded-3xl border border-amber-300/25 bg-amber-300/10 p-5 sm:p-6">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">
-                {beta.label}
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-amber-50">
-                Beta registration capacity
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-amber-100/75">
-                The count is allocated atomically by the database. It is not a frontend-only limit.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-amber-200/20 bg-black/10 px-5 py-3 text-right">
-              <p className="font-display text-2xl font-bold text-amber-50">
-                {beta.registered_workspaces.toLocaleString()} /{" "}
-                {beta.max_workspaces.toLocaleString()}
-              </p>
-              <p className="text-xs text-amber-100/70">registered workspaces</p>
-            </div>
-          </div>
-        </section>
-      )}
-
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
           <div key={label} className="glass glass-hover rounded-2xl p-5">
@@ -235,6 +285,133 @@ function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <section className="mb-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              <Activity className="size-4" /> Live product engines
+            </div>
+            <h2 className="mt-2 font-display text-2xl font-bold">
+              Analysis, ensemble, and statistics
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              These panels run the same current draw history and enabled strategies as the product
+              routes. They are read-only operator views and refresh with the live source data.
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {liveTargetDate} · {liveTargetSession} · {liveHistory.length} draws
+          </span>
+        </div>
+        <div className="mt-5 grid gap-4 xl:grid-cols-3">
+          <Panel title="Live analysis">
+            <p className="text-xs text-muted-foreground">Top formula candidates</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {livePrediction.pool.slice(0, 10).map((candidate, index) => (
+                <div key={candidate.n} className="text-center">
+                  <Ball n={candidate.n} variant={index === 0 ? "primary" : "accent"} />
+                  <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                    {candidate.score}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Banker:{" "}
+              <strong className="font-mono text-foreground">
+                {livePrediction.bankers[0]?.n ?? "—"}
+              </strong>
+              {" · "}
+              {livePrediction.strategy_count} active strategies
+            </p>
+          </Panel>
+          <Panel title="Live ensemble">
+            <p className="text-xs text-muted-foreground">Formula 70% · statistics 30%</p>
+            <p className="mt-3 font-display text-3xl font-bold">
+              {liveEnsemble.banker.banker?.n ?? "—"}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-primary">{liveEnsemble.banker.status}</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-[10px]">
+              {(Object.keys(liveEnsemble.counts) as Array<keyof typeof liveEnsemble.counts>).map(
+                (classification) => (
+                  <span
+                    key={classification}
+                    className="rounded border border-border/70 px-2 py-1 text-muted-foreground"
+                  >
+                    {classification}: {liveEnsemble.counts[classification]}
+                  </span>
+                ),
+              )}
+            </div>
+          </Panel>
+          <Panel title="Live statistics">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Sample {liveStats.sample}</span>
+              <span>Entropy {(liveStats.entropy.ratio * 100).toFixed(1)}%</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {liveStats.numbers.slice(0, 6).map((number) => (
+                <div key={number.n} className="flex items-center gap-2 text-xs">
+                  <Ball n={number.n} className="size-7 text-[11px]" />
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/70">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${number.score * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-right font-mono text-muted-foreground">
+                    #{number.rank}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              <Library className="size-4" /> Product directory
+            </div>
+            <h2 className="mt-2 font-display text-2xl font-bold">All live product surfaces</h2>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <p>No payment gate in Early Bird test</p>
+            <p className="mt-1 font-mono text-primary">
+              {earlyBird
+                ? `${earlyBird.claimed}/${earlyBird.limit} registered · ${earlyBird.remaining} remaining`
+                : "Loading tester capacity…"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Client dashboard", "/dashboard"],
+            ["Analysis engine", "/analysis"],
+            ["Ensemble confirmation", "/ensemble"],
+            ["Strategy manager", "/strategies"],
+            ["Draw workflow", "/draws"],
+            ["Prediction ledger", "/history"],
+            ["Backtest lab", "/backtest"],
+            ["Research reports", "/research"],
+            ["Russia lottery module", "/russia"],
+            ["Structure tools", "/structure"],
+            ["Notifications", "/notifications"],
+            ["Premium workspace", "/premium"],
+          ].map(([label, href]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-xl border border-border/60 bg-background/20 px-3 py-3 text-sm font-semibold hover:border-primary/50 hover:text-primary"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </section>
 
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -515,7 +692,7 @@ function AdminDashboard() {
               <thead>
                 <tr className="text-left uppercase tracking-widest text-muted-foreground">
                   <th className="pb-2">Name</th>
-                  <th className="pb-2">Category</th>
+                  <th className="pb-2">Rule type</th>
                   <th className="pb-2">Rule</th>
                   <th className="pb-2">State</th>
                 </tr>
@@ -524,7 +701,7 @@ function AdminDashboard() {
                 {strategies.map((strategy) => (
                   <tr key={strategy.id} className="border-t border-border/60">
                     <td className="py-2 font-medium">{strategy.name}</td>
-                    <td className="py-2 text-muted-foreground">{strategy.category}</td>
+                    <td className="py-2 text-muted-foreground">{strategy.rule_type}</td>
                     <td className="py-2 font-mono text-muted-foreground">{strategy.rule_type}</td>
                     <td
                       className={`py-2 ${strategy.enabled ? "text-emerald-400" : "text-muted-foreground"}`}
@@ -569,6 +746,52 @@ function AdminDashboard() {
           </div>
         </Panel>
       </div>
+
+      <Panel
+        title="Manus research"
+        className="mt-6"
+        action={
+          <button
+            onClick={runResearchNow}
+            disabled={researchPending}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            {researchPending ? "Starting…" : "Run now"}
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          {researchLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {researchReports.map((report: Record<string, unknown>) => (
+            <div key={String(report["id"])} className="rounded-xl border border-border/70 p-3">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-mono text-muted-foreground">
+                  {new Date(String(report["created_at"])).toLocaleString("en-GB")}
+                </span>
+                <span
+                  className={
+                    report["status"] === "completed"
+                      ? "text-emerald-400"
+                      : report["status"] === "failed"
+                        ? "text-red-400"
+                        : "text-amber-400"
+                  }
+                >
+                  {String(report["status"])}
+                </span>
+              </div>
+              {typeof report["error"] === "string" && report["error"] && (
+                <p className="mt-1 text-[11px] text-red-400">{report["error"]}</p>
+              )}
+            </div>
+          ))}
+          {!researchLoading && researchReports.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No research runs yet — use "Run now" to start one.
+            </p>
+          )}
+        </div>
+      </Panel>
 
       <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-muted-foreground">
         <strong className="text-amber-300">Security boundary:</strong> password values are never

@@ -160,14 +160,51 @@
 }
 
 @utility ball-primary {
-  background: linear-gradient(150deg, var(--color-primary), oklch(0.7 0.15 195));
-  color: var(--color-primary-foreground);
-  border-color: transparent;
-  box-shadow: var(--shadow-glow);
+  box-shadow: 0 0 0 2px var(--color-primary), var(--shadow-glow);
 }
 
 @utility ball-accent {
-  background: linear-gradient(150deg, var(--color-accent), oklch(0.62 0.18 320));
-  color: var(--color-accent-foreground);
-  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+@utility ball-uk-green {
+  background: linear-gradient(150deg, #22c55e, #15803d);
+  color: #ffffff;
+  border-color: #86efac;
+}
+
+@utility ball-uk-red {
+  background: linear-gradient(150deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  border-color: #fca5a5;
+}
+
+@utility ball-uk-orange {
+  background: linear-gradient(150deg, #fb923c, #c2410c);
+  color: #ffffff;
+  border-color: #fdba74;
+}
+
+@utility ball-uk-yellow {
+  background: linear-gradient(150deg, #fde047, #ca8a04);
+  color: #1c1917;
+  border-color: #fef08a;
+}
+
+@utility ball-uk-brown {
+  background: linear-gradient(150deg, #a16207, #713f12);
+  color: #ffffff;
+  border-color: #d6b16a;
+}
+
+@utility ball-uk-purple {
+  background: linear-gradient(150deg, #a855f7, #6b21a8);
+  color: #ffffff;
+  border-color: #d8b4fe;
+}
+
+@utility ball-uk-blue {
+  background: linear-gradient(150deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  border-color: #93c5fd;
 }

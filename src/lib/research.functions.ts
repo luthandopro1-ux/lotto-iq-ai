@@ -8,11 +8,11 @@ export const listResearchReportsFn = createServerFn({ method: "GET" }).handler(a
   return listResearchReports(serverDb());
 });
 
-/** Manually kick off a research run (normally only the weekly cron does this). */
+/** Manually kick off a research run (normally only the Mon/Wed/Fri schedule does this). */
 export const triggerResearchNow = createServerFn({ method: "POST" })
   .middleware([adminGuard])
   .handler(async () => {
     const { serverDb } = await import("@/lib/db.server");
-    const { startWeeklyResearch } = await import("@/lib/research.server");
-    return startWeeklyResearch(serverDb());
+    const { startResearchRun } = await import("@/lib/research.server");
+    return startResearchRun(serverDb());
   });
