@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { BrandCopyright } from "@/components/BrandCopyright";
+import { useQuery } from "@tanstack/react-query";
+import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,6 +63,12 @@ const principles = [
 ];
 
 function LandingPage() {
+  const earlyBird = useQuery({
+    queryKey: ["early-bird-availability"],
+    queryFn: () => getEarlyBirdStatus(),
+    refetchInterval: 30_000,
+  });
+
   return (
     <main className="min-h-screen overflow-hidden">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
@@ -101,7 +109,7 @@ function LandingPage() {
       <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-10 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pb-28 lg:pt-20">
         <div>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            <Sparkles className="size-3.5" /> UK49 strategy intelligence
+            <Sparkles className="size-3.5" /> Early Bird · first 1,000 testers
           </div>
           <h1 className="max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
             Make your lottery analysis <span className="gradient-text">repeatable.</span>
@@ -134,6 +142,30 @@ function LandingPage() {
             Lotto IQ analyses historical results and user-defined strategies. Lottery draws are
             random; this product does not guarantee outcomes or claim to change the odds.
           </p>
+          <div className="mt-7 rounded-2xl border border-primary/25 bg-primary/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Early Bird Special
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  Live system access with no payment required
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  The first 1,000 authenticated testers receive the current Premium workspace while
+                  we validate the live product. No adverts are shown in this test programme.
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="font-display text-2xl font-bold text-primary">
+                  {earlyBird.data?.remaining.toLocaleString("en-GB") ?? "—"}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  places remaining
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="relative">

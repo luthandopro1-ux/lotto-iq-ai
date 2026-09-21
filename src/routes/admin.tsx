@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell, Panel } from "@/components/AppShell";
+import { AppShell, Ball, Panel } from "@/components/AppShell";
 import { SyncLog } from "@/components/SyncLog";
 import { SyncPanel } from "@/components/SyncPanel";
 import {
@@ -22,6 +22,11 @@ import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
 import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
 import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functions";
+import { buildPrediction } from "@/lib/predict";
+import { computeStats } from "@/lib/stats";
+import { buildEnsemble } from "@/lib/ensemble";
+import { currentSession, type Draw, type Strategy } from "@/lib/uk49";
+import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -81,12 +86,23 @@ function AdminDashboard() {
     enabled: isAdministrator,
   });
 
+  const { data: earlyBird } = useQuery({
+    queryKey: ["admin", "early-bird"],
+    queryFn: () => getEarlyBirdStatus(),
+    refetchInterval: 30_000,
+    enabled: isAdministrator,
+  });
+
   const { data: draws = [], isLoading: drawsLoading } = useQuery({
     queryKey: ["admin", "draws-count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("draws").select("id").limit(1000);
+      const { data, error } = await supabase
+        .from("draws")
+        .select("*")
+        .order("draw_date", { ascending: false })
+        .limit(400);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as Draw[];
     },
     refetchInterval: 30_000,
     enabled: isAdministrator,
@@ -97,10 +113,10 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("strategies")
-        .select("id,name,enabled,category,rule_type,updated_at")
+        .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as Strategy[];
     },
     refetchInterval: 30_000,
     enabled: isAdministrator,
@@ -135,6 +151,25 @@ function AdminDashboard() {
     queryFn: () => listResearchReportsFn(),
     enabled: isAdministrator,
   });
+
+  const activeStrategies = strategies.filter((strategy) => strategy.enabled);
+  const liveTargetDate = new Date().toISOString().slice(0, 10);
+  const liveTargetSession = currentSession();
+  const liveHistory = draws as Draw[];
+  const livePrediction = useMemo(
+    () =>
+      buildPrediction(activeStrategies, {
+        targetDate: liveTargetDate,
+        targetSession: liveTargetSession,
+        history: liveHistory,
+      }),
+    [activeStrategies, liveHistory, liveTargetDate, liveTargetSession],
+  );
+  const liveStats = useMemo(() => computeStats(liveHistory, { simulations: 500 }), [liveHistory]);
+  const liveEnsemble = useMemo(
+    () => buildEnsemble(livePrediction, liveStats, 0.7),
+    [livePrediction, liveStats],
+  );
 
   if (session.isLoading || (session.data && accessLoading))
     return (
@@ -171,7 +206,7 @@ function AdminDashboard() {
       </AppShell>
     );
 
-  const activeStrategies = strategies.filter((strategy) => strategy.enabled).length;
+  const activeStrategyCount = activeStrategies.length;
   const gradedPredictions = predictions.filter((prediction) => prediction.outcome != null).length;
   const activeEstimate = capacity?.current.active_users_estimate ?? 0;
   const capacityPercent = capacity?.current.capacity_percent ?? 0;
@@ -215,7 +250,7 @@ function AdminDashboard() {
     },
     {
       label: "Active strategies",
-      value: strategiesLoading ? "…" : activeStrategies,
+      value: strategiesLoading ? "…" : activeStrategyCount,
       icon: Library,
     },
     { label: "Recent predictions", value: predictions.length, icon: Target },
@@ -250,6 +285,135 @@ function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <section className="mb-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              <Activity className="size-4" /> Live product engines
+            </div>
+            <h2 className="mt-2 font-display text-2xl font-bold">
+              Analysis, ensemble, and statistics
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              These panels run the same current draw history and enabled strategies as the product
+              routes. They are read-only operator views and refresh with the live source data.
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {liveTargetDate} · {liveTargetSession} · {liveHistory.length} draws
+          </span>
+        </div>
+        <div className="mt-5 grid gap-4 xl:grid-cols-3">
+          <Panel title="Live analysis">
+            <p className="text-xs text-muted-foreground">Top formula candidates</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {livePrediction.pool.slice(0, 10).map((candidate, index) => (
+                <div key={candidate.n} className="text-center">
+                  <Ball n={candidate.n} variant={index === 0 ? "primary" : "accent"} />
+                  <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                    {candidate.score}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Banker:{" "}
+              <strong className="font-mono text-foreground">
+                {livePrediction.bankers[0]?.n ?? "—"}
+              </strong>
+              {" · "}
+              {livePrediction.strategy_count} active strategies
+            </p>
+          </Panel>
+          <Panel title="Live ensemble">
+            <p className="text-xs text-muted-foreground">Formula 70% · statistics 30%</p>
+            <p className="mt-3 font-display text-3xl font-bold">
+              {liveEnsemble.banker.banker?.n ?? "—"}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-primary">{liveEnsemble.banker.status}</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-[10px]">
+              {(Object.keys(liveEnsemble.counts) as Array<keyof typeof liveEnsemble.counts>).map(
+                (classification) => (
+                  <span
+                    key={classification}
+                    className="rounded border border-border/70 px-2 py-1 text-muted-foreground"
+                  >
+                    {classification}: {liveEnsemble.counts[classification]}
+                  </span>
+                ),
+              )}
+            </div>
+          </Panel>
+          <Panel title="Live statistics">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Sample {liveStats.sample}</span>
+              <span>Entropy {(liveStats.entropy.ratio * 100).toFixed(1)}%</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {liveStats.numbers.slice(0, 6).map((number) => (
+                <div key={number.n} className="flex items-center gap-2 text-xs">
+                  <span className="w-7 font-mono font-bold">
+                    {String(number.n).padStart(2, "0")}
+                  </span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/70">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${number.score * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-right font-mono text-muted-foreground">
+                    #{number.rank}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              <Library className="size-4" /> Product directory
+            </div>
+            <h2 className="mt-2 font-display text-2xl font-bold">All live product surfaces</h2>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <p>No payment gate in Early Bird test</p>
+            <p className="mt-1 font-mono text-primary">
+              {earlyBird
+                ? `${earlyBird.claimed}/${earlyBird.limit} registered · ${earlyBird.remaining} remaining`
+                : "Loading tester capacity…"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Client dashboard", "/dashboard"],
+            ["Analysis engine", "/analysis"],
+            ["Ensemble confirmation", "/ensemble"],
+            ["Strategy manager", "/strategies"],
+            ["Draw workflow", "/draws"],
+            ["Prediction ledger", "/history"],
+            ["Backtest lab", "/backtest"],
+            ["Research reports", "/research"],
+            ["Russia lottery module", "/russia"],
+            ["Structure tools", "/structure"],
+            ["Notifications", "/notifications"],
+            ["Premium workspace", "/premium"],
+          ].map(([label, href]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-xl border border-border/60 bg-background/20 px-3 py-3 text-sm font-semibold hover:border-primary/50 hover:text-primary"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </section>
 
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -530,7 +694,7 @@ function AdminDashboard() {
               <thead>
                 <tr className="text-left uppercase tracking-widest text-muted-foreground">
                   <th className="pb-2">Name</th>
-                  <th className="pb-2">Category</th>
+                  <th className="pb-2">Rule type</th>
                   <th className="pb-2">Rule</th>
                   <th className="pb-2">State</th>
                 </tr>
@@ -539,7 +703,7 @@ function AdminDashboard() {
                 {strategies.map((strategy) => (
                   <tr key={strategy.id} className="border-t border-border/60">
                     <td className="py-2 font-medium">{strategy.name}</td>
-                    <td className="py-2 text-muted-foreground">{strategy.category}</td>
+                    <td className="py-2 text-muted-foreground">{strategy.rule_type}</td>
                     <td className="py-2 font-mono text-muted-foreground">{strategy.rule_type}</td>
                     <td
                       className={`py-2 ${strategy.enabled ? "text-emerald-400" : "text-muted-foreground"}`}
