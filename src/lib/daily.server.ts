@@ -148,7 +148,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
   const { serverDb } = await import("@/lib/db.server");
   const { buildPrediction, buildLearning, gradePrediction, sessionIndex, dailySequence } =
     await import("@/lib/predict");
-  const db = serverDb();
+  const db = serverDb(true);
 
   const now = new Date();
   const targetDate = data.date ?? ukDate(now);
@@ -168,15 +168,30 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     }
   }
 
-  const [{ data: drawRows }, { data: strategyRows }, { data: predictionRows }] = await Promise.all([
+  const [
+    { data: drawRows, error: drawRowsError },
+    { data: strategyRows, error: strategyRowsError },
+    { data: predictionRows, error: predictionRowsError },
+  ] = await Promise.all([
     db.from("draws").select("*").order("draw_date", { ascending: false }).limit(600),
     db.from("strategies").select("*").eq("enabled", true),
     db.from("predictions").select("*").order("target_date", { ascending: false }).limit(60),
   ]);
+  if (drawRowsError)
+    syncErrors.push(`Failed to load draws for board build: ${drawRowsError.message}`);
+  if (strategyRowsError)
+    syncErrors.push(`Failed to load strategies for board build: ${strategyRowsError.message}`);
+  if (predictionRowsError)
+    syncErrors.push(`Failed to load predictions for board build: ${predictionRowsError.message}`);
 
   const history = (drawRows ?? []) as never[] as import("@/lib/uk49").Draw[];
   const strategies = (strategyRows ?? []) as never[] as import("@/lib/uk49").Strategy[];
   const predictions = predictionRows ?? [];
+  if (strategies.length === 0 && !strategyRowsError) {
+    syncErrors.push(
+      "No enabled strategies found — every session will be skipped and no prediction will be written this run.",
+    );
+  }
 
   const drawFor = (date: string, session: string) =>
     history.find((d) => d.draw_date === date && d.session === session);
@@ -470,7 +485,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
 /** Read-only view of the state machine, straight from the database. */
 export async function readBoard(date?: string) {
   const { serverDb } = await import("@/lib/db.server");
-  const db = serverDb();
+  const db = serverDb(true);
   const now = new Date();
   const targetDate = date ?? ukDate(now);
 
