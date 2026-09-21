@@ -288,6 +288,19 @@ function PredictionsPage() {
                 </p>
               )}
 
+              {p && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Target:{" "}
+                  <span className="font-semibold text-foreground">
+                    {p.target_date} {SESSION_LABELS[p.target_session]}
+                  </span>
+                  {p.history_cutoff_date && p.history_cutoff_session
+                    ? ` · History through ${p.history_cutoff_date} ${SESSION_LABELS[p.history_cutoff_session]}`
+                    : " · Legacy cutoff metadata unavailable"}
+                  {p.model_version ? ` · ${p.model_version}` : ""}
+                </p>
+              )}
+
               {slot?.blockedReason && (
                 <p className="mb-3 text-xs text-amber-400">Waiting: {slot.blockedReason}</p>
               )}

@@ -1,5 +1,12 @@
 import { runAnalysis, type ScoredNumber } from "./engine";
-import { SESSIONS, drawNumbers, type Draw, type SessionKey, type Strategy } from "./uk49";
+import {
+  SESSIONS,
+  drawNumbers,
+  isDrawBefore,
+  type Draw,
+  type SessionKey,
+  type Strategy,
+} from "./uk49";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -108,17 +115,35 @@ export interface GradedRecord {
   grading: Grading | null;
 }
 
+export interface LearningCutoff {
+  targetDate: string;
+  targetSession: SessionKey;
+}
+
 /**
  * Turns recent graded predictions into score adjustments.
  * Misses are penalised, hits reinforced, and each strategy gets an
  * accuracy multiplier — this is what makes the system learn across the
  * four daily draws.
  */
-export function buildLearning(records: GradedRecord[], sameDay?: string): Learning {
+export function buildLearning(
+  records: GradedRecord[],
+  sameDay?: string,
+  cutoff?: LearningCutoff,
+): Learning {
   const learning = emptyLearning();
   const strategyTally: Record<string, { hits: number; misses: number }> = {};
 
-  records.forEach((rec, idx) => {
+  const eligible = cutoff
+    ? records.filter((rec) =>
+        isDrawBefore(
+          { draw_date: rec.target_date, session: rec.target_session },
+          { draw_date: cutoff.targetDate, session: cutoff.targetSession },
+        ),
+      )
+    : records;
+
+  eligible.forEach((rec, idx) => {
     const g = rec.grading;
     if (!g) return;
     learning.sampleSize += 1;
