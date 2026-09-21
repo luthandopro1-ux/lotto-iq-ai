@@ -12,6 +12,7 @@ import {
   Clock3,
   Database,
   Gauge,
+  Globe2,
   Library,
   LockKeyhole,
   ShieldCheck,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { getAccessContext } from "@/lib/customer.functions";
 import { getCapacityMetrics } from "@/lib/capacity.functions";
+import { getGeographyAnalytics } from "@/lib/geography.functions";
 import { getSecurityOverview, setAccountAccess } from "@/lib/security.functions";
 import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functions";
 import { buildPrediction } from "@/lib/predict";
@@ -90,6 +92,17 @@ function AdminDashboard() {
     queryKey: ["admin", "early-bird"],
     queryFn: () => getEarlyBirdStatus(),
     refetchInterval: 30_000,
+    enabled: isAdministrator,
+  });
+
+  const {
+    data: geography,
+    isLoading: geographyLoading,
+    error: geographyError,
+  } = useQuery({
+    queryKey: ["admin", "geography"],
+    queryFn: () => getGeographyAnalytics(),
+    refetchInterval: 5 * 60_000,
     enabled: isAdministrator,
   });
 
@@ -525,6 +538,73 @@ function AdminDashboard() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              <Globe2 className="size-4" /> Geographic distribution
+            </div>
+            <h2 className="mt-2 font-display text-2xl font-bold">Client workspaces by country</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Aggregated country counts from workspace billing metadata. No names, emails, IP
+              addresses, or individual location trails are displayed here.
+            </p>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <p>Total workspaces</p>
+            <p className="mt-1 font-mono text-primary">
+              {geographyLoading ? "…" : (geography?.totalWorkspaces.toLocaleString("en-GB") ?? "—")}
+            </p>
+          </div>
+        </div>
+        {geographyError ? (
+          <p className="mt-5 text-xs text-amber-300">
+            Geographic analytics are temporarily unavailable.
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(geography?.countries ?? []).slice(0, 12).map((country) => (
+              <div
+                key={country.countryCode}
+                className="rounded-2xl border border-border/60 bg-background/20 p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-xs font-semibold text-primary">
+                    {country.countryCode}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {country.workspaces} workspaces
+                  </span>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary/70">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{
+                      width: `${Math.min(100, geography?.totalWorkspaces ? (country.workspaces / geography.totalWorkspaces) * 100 : 0)}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {country.activePremium} active Premium
+                </p>
+              </div>
+            ))}
+            {!geographyLoading && !geography?.countries.length && (
+              <p className="text-sm text-muted-foreground">
+                Country distribution will appear after workspace metadata is recorded.
+              </p>
+            )}
+          </div>
+        )}
+        {geography && geography.unknownCountryWorkspaces > 0 && (
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            {geography.unknownCountryWorkspaces} workspace
+            {geography.unknownCountryWorkspaces === 1 ? "" : "s"} have no country metadata and are
+            grouped as ZZ.
+          </p>
+        )}
       </section>
 
       <section className="mb-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">

@@ -59,6 +59,8 @@ export interface AccessContext {
   workspaceId: string | null;
   planCode: "free" | "premium" | null;
   planStatus: string | null;
+  betaAccess: boolean;
+  betaExpiresAt: string | null;
 }
 
 export function hasCapability(context: AccessContext, capability: Capability): boolean {
