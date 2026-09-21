@@ -1,4 +1,4 @@
--- Lotto IQ AI — Lum Tech Solutions
+-- Lotto IQ — Lum Tech Solutions
 -- Bootstrap one super administrator through the existing administrator allowlist.
 --
 -- IMPORTANT:

@@ -26,7 +26,7 @@ import { SESSION_LABELS, type Draw, type Strategy } from "@/lib/uk49";
 export const Route = createFileRoute("/structure")({
   head: () => ({
     meta: [
-      { title: "Dream Wheel & Structure — Lotto IQ AI" },
+      { title: "Dream Wheel & Structure — Lotto IQ" },
       {
         name: "description",
         content:

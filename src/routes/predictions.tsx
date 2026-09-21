@@ -36,7 +36,7 @@ function StateBadge({ state }: { state: string }) {
 export const Route = createFileRoute("/predictions")({
   head: () => ({
     meta: [
-      { title: "Daily Prediction Chart — Lotto IQ AI" },
+      { title: "Daily Prediction Chart — Lotto IQ" },
       {
         name: "description",
         content:

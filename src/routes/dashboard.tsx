@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Client Workspace" },
+      { title: "Lotto IQ — Client Workspace" },
       {
         name: "description",
         content:

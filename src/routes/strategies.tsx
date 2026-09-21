@@ -18,7 +18,7 @@ import { Trash2 } from "lucide-react";
 export const Route = createFileRoute("/strategies")({
   head: () => ({
     meta: [
-      { title: "Strategy Library — Lotto IQ AI" },
+      { title: "Strategy Library — Lotto IQ" },
       {
         name: "description",
         content:

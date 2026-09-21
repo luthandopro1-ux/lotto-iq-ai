@@ -33,11 +33,10 @@ import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Admin Operations" },
+      { title: "Lotto IQ — Admin Operations" },
       {
         name: "description",
-        content:
-          "Lum Tech Solutions operator dashboard for Lotto IQ AI data and analysis operations.",
+        content: "Lotto IQ administrator dashboard for data and analysis operations.",
       },
     ],
   }),
@@ -205,7 +204,7 @@ function AdminDashboard() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {session.data
               ? "This is a protected operator console. Your customer account cannot read platform operations or private strategy definitions."
-              : "Sign in with an allowlisted administrator account to open the Lum Tech Solutions operator console."}
+              : "Sign in with an allowlisted administrator account to open the Lotto IQ administrator console."}
           </p>
           {!session.data && (
             <Link
@@ -275,7 +274,7 @@ function AdminDashboard() {
       <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-primary/20 bg-primary/10 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            <ShieldCheck className="size-4" /> Lum Tech Solutions operations
+            <ShieldCheck className="size-4" /> Lotto IQ Team
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold">Admin dashboard</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -828,7 +827,7 @@ function AdminDashboard() {
       </div>
 
       <Panel
-        title="Manus research"
+        title="Lotto IQ research"
         className="mt-6"
         action={
           <button

@@ -20,7 +20,7 @@ import {
 export const Route = createFileRoute("/russia")({
   head: () => ({
     meta: [
-      { title: "Russia Lottery — Lotto IQ AI" },
+      { title: "Russia Lottery — Lotto IQ" },
       {
         name: "description",
         content:

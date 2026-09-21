@@ -10,11 +10,11 @@ import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functi
 export const Route = createFileRoute("/research")({
   head: () => ({
     meta: [
-      { title: "Research — Lotto IQ AI" },
+      { title: "Research — Lotto IQ" },
       {
         name: "description",
         content:
-          "Weekly Manus-powered research comparing public lottery analysis techniques against this app's own real backtest performance.",
+          "Weekly Lotto IQ research comparing public lottery analysis techniques against this app's own real backtest performance.",
       },
     ],
   }),
@@ -51,7 +51,7 @@ function ResearchPage() {
     mutationFn: () => triggerFn(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["research", "reports"] });
-      toast.success("Research task started — Manus is working in the background.");
+      toast.success("Research task started — Lotto IQ research is running in the background.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -62,8 +62,8 @@ function ResearchPage() {
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Research</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        A weekly background job asks Manus to research current public lottery-analysis techniques
-        and compare them against this app's own real, walk-forward backtest numbers. Runs
+        A weekly Lotto IQ research job reviews current public lottery-analysis techniques and
+        compares them against this app's own real, walk-forward backtest numbers. It runs
         automatically every Monday; you can also trigger one manually below.
       </p>
 
@@ -109,7 +109,7 @@ function ResearchPage() {
                     rel="noreferrer"
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
                   >
-                    View in Manus <ExternalLink className="size-3" />
+                    Open research task <ExternalLink className="size-3" />
                   </a>
                 )}
               </div>
@@ -118,7 +118,7 @@ function ResearchPage() {
 
               {r.status === "pending" && (
                 <p className="text-sm text-muted-foreground">
-                  Manus is still working — this page refreshes automatically.
+                  Lotto IQ research is still running — this page refreshes automatically.
                 </p>
               )}
 
