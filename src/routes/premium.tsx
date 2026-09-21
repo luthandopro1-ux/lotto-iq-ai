@@ -474,7 +474,7 @@ function EarlyBirdClaim() {
 
   if (status.isLoading) return null;
   const remaining = status.data?.remaining ?? 0;
-  if (remaining <= 0) return null;
+  if (remaining <= 0 || status.data?.enabled !== true) return null;
 
   return (
     <div className="mt-8 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-5 text-left">
@@ -483,8 +483,9 @@ function EarlyBirdClaim() {
         <p className="text-xs font-bold uppercase tracking-widest">Early-bird — 100% off</p>
       </div>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        The first 1,000 clients get full Premium access at no cost, to help test the software before
-        billing goes live. No card, no checkout — one click.
+        The first 1,000 clients may claim full Premium access at no cost during the 30-day beta
+        window. No card, no checkout — one click. Your normal Free dashboard remains available
+        without claiming this offer.
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         <span className="font-semibold text-foreground">{remaining}</span> of{" "}

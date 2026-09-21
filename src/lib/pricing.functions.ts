@@ -25,7 +25,34 @@ export const getPricingContext = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export type EarlyBirdStatus = { limit: number; claimed: number; remaining: number };
+export type EarlyBirdStatus = {
+  limit: number;
+  claimed: number;
+  remaining: number;
+  enabled?: boolean;
+  ends_at?: string;
+};
+
+type CountryCaptureDb = {
+  rpc: (
+    fn: "record_my_country_code",
+    args: { p_country_code: string },
+  ) => Promise<{ data: boolean | null; error: { message: string } | null }>;
+};
+
+/** Stores only the edge-provided ISO country code on the caller's own workspace. */
+export const captureWorkspaceCountry = createServerFn({ method: "POST" })
+  .middleware([requireAccessContext])
+  .handler(async ({ context }): Promise<void> => {
+    const request = getRequest();
+    const edgeCountry =
+      request?.headers.get("cf-ipcountry") ?? request?.headers.get("x-country-code");
+    const countryCode =
+      edgeCountry && /^[A-Z]{2}$/i.test(edgeCountry) ? edgeCountry.toUpperCase() : "ZA";
+    const db = context.supabase as unknown as CountryCaptureDb;
+    const { error } = await db.rpc("record_my_country_code", { p_country_code: countryCode });
+    if (error) throw new Error(`Could not record country metadata: ${error.message}`);
+  });
 
 type CountryCaptureDb = {
   rpc: (
@@ -63,7 +90,7 @@ export const getEarlyBirdStatus = createServerFn({ method: "GET" }).handler(
     const { serverDb } = await import("@/lib/db.server");
     const db = serverDb() as unknown as EarlyBirdStatusDb;
     const { data, error } = await db.rpc("get_early_bird_status");
-    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000 };
+    if (error || !data) return { limit: 1000, claimed: 0, remaining: 1000, enabled: false };
     return data;
   },
 );
