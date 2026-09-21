@@ -8,13 +8,72 @@ export type Database = {
   };
   public: {
     Tables: {
+      analytics_jobs: {
+        Row: {
+          contract_version: string;
+          created_at: string;
+          error_class: string | null;
+          feature_version: string;
+          finished_at: string | null;
+          id: string;
+          kind: string;
+          model_version: string;
+          parameters_hash: string;
+          request_id: string;
+          source_draw_watermark: string | null;
+          started_at: string | null;
+          status: string;
+          strategy_set_version: string;
+        };
+        Insert: {
+          contract_version?: string;
+          created_at?: string;
+          error_class?: string | null;
+          feature_version?: string;
+          finished_at?: string | null;
+          id?: string;
+          kind: string;
+          model_version?: string;
+          parameters_hash?: string;
+          request_id: string;
+          source_draw_watermark?: string | null;
+          started_at?: string | null;
+          status?: string;
+          strategy_set_version?: string;
+        };
+        Update: {
+          contract_version?: string;
+          created_at?: string;
+          error_class?: string | null;
+          feature_version?: string;
+          finished_at?: string | null;
+          id?: string;
+          kind?: string;
+          model_version?: string;
+          parameters_hash?: string;
+          request_id?: string;
+          source_draw_watermark?: string | null;
+          started_at?: string | null;
+          status?: string;
+          strategy_set_version?: string;
+        };
+        Relationships: [];
+      };
       analysis_runs: {
         Row: {
           breakdown: Json;
+          contract_version: string;
           created_at: string;
+          execution_status: string;
+          feature_version: string;
           id: string;
+          job_id: string | null;
+          model_version: string;
+          parameters_hash: string;
           previous_draw_ids: string[];
+          source_draw_watermark: string | null;
           strategy_count: number;
+          strategy_set_version: string;
           target_date: string;
           target_session: string;
           top_numbers: Json;
@@ -23,10 +82,18 @@ export type Database = {
         };
         Insert: {
           breakdown?: Json;
+          contract_version?: string;
           created_at?: string;
+          execution_status?: string;
+          feature_version?: string;
           id?: string;
+          job_id?: string | null;
+          model_version?: string;
+          parameters_hash?: string;
           previous_draw_ids?: string[];
+          source_draw_watermark?: string | null;
           strategy_count?: number;
+          strategy_set_version?: string;
           target_date: string;
           target_session: string;
           top_numbers?: Json;
@@ -35,10 +102,18 @@ export type Database = {
         };
         Update: {
           breakdown?: Json;
+          contract_version?: string;
           created_at?: string;
+          execution_status?: string;
+          feature_version?: string;
           id?: string;
+          job_id?: string | null;
+          model_version?: string;
+          parameters_hash?: string;
           previous_draw_ids?: string[];
+          source_draw_watermark?: string | null;
           strategy_count?: number;
+          strategy_set_version?: string;
           target_date?: string;
           target_session?: string;
           top_numbers?: Json;
@@ -49,31 +124,55 @@ export type Database = {
       };
       backtests: {
         Row: {
+          contract_version: string;
           created_at: string;
           date_from: string;
           date_to: string;
+          execution_status: string;
+          feature_version: string;
           id: string;
+          job_id: string | null;
           label: string | null;
+          model_version: string;
+          parameters_hash: string;
           results: Json;
+          source_draw_watermark: string | null;
           strategy_ids: string[];
+          strategy_set_version: string;
         };
         Insert: {
+          contract_version?: string;
           created_at?: string;
           date_from: string;
           date_to: string;
+          execution_status?: string;
+          feature_version?: string;
           id?: string;
+          job_id?: string | null;
           label?: string | null;
+          model_version?: string;
+          parameters_hash?: string;
           results?: Json;
+          source_draw_watermark?: string | null;
           strategy_ids?: string[];
+          strategy_set_version?: string;
         };
         Update: {
+          contract_version?: string;
           created_at?: string;
           date_from?: string;
           date_to?: string;
+          execution_status?: string;
+          feature_version?: string;
           id?: string;
+          job_id?: string | null;
           label?: string | null;
+          model_version?: string;
+          parameters_hash?: string;
           results?: Json;
+          source_draw_watermark?: string | null;
           strategy_ids?: string[];
+          strategy_set_version?: string;
         };
         Relationships: [];
       };

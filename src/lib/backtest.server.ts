@@ -15,6 +15,13 @@ import {
   type Strategy,
 } from "@/lib/uk49";
 import type { Db } from "@/lib/db.server";
+import {
+  ANALYTICS_CONTRACT_VERSION,
+  ANALYTICS_FEATURE_VERSION,
+  ANALYTICS_MODEL_VERSION,
+  ANALYTICS_STRATEGY_SET_VERSION,
+} from "@/lib/analytics-contract";
+import { beginOperation, hashParameters } from "@/lib/observability.server";
 
 /**
  * BACKTESTING ENGINE — Model A–E comparison.
@@ -93,6 +100,14 @@ export interface BacktestRow {
   date_to: string;
   strategy_ids: string[];
   results: BacktestResults;
+  contract_version: string;
+  model_version: string;
+  feature_version: string;
+  strategy_set_version: string;
+  parameters_hash: string;
+  source_draw_watermark: string | null;
+  execution_status: string;
+  job_id: string | null;
   created_at: string;
 }
 
@@ -275,26 +290,73 @@ export async function runAndSaveBacktest(
   db: Db,
   options: RunBacktestOptions,
 ): Promise<BacktestRow> {
-  const results = evaluateBacktest(options);
+  const operation = beginOperation({
+    operation: "backtest.save",
+    modelVersion: ANALYTICS_MODEL_VERSION,
+  });
+  let results: BacktestResults;
+  try {
+    results = evaluateBacktest(options);
+  } catch (error) {
+    operation.finish({ status: "failed", error });
+    throw error;
+  }
+  const sourceDrawWatermark = options.history.reduce<string | null>(
+    (latest, draw) => (!latest || draw.draw_date > latest ? draw.draw_date : latest),
+    null,
+  );
+  const parametersHash = await hashParameters({
+    dateFrom: options.dateFrom,
+    dateTo: options.dateTo,
+    strategyIds: options.strategies.map((strategy) => strategy.id).sort(),
+    simulations: options.simulations ?? 150,
+  });
   const payload = {
     label: options.label ?? null,
     date_from: options.dateFrom,
     date_to: options.dateTo,
     strategy_ids: options.strategies.map((s) => s.id),
     results: results as never,
+    contract_version: ANALYTICS_CONTRACT_VERSION,
+    model_version: ANALYTICS_MODEL_VERSION,
+    feature_version: ANALYTICS_FEATURE_VERSION,
+    strategy_set_version: ANALYTICS_STRATEGY_SET_VERSION,
+    parameters_hash: parametersHash,
+    source_draw_watermark: sourceDrawWatermark,
+    execution_status: "completed",
+    job_id: null,
   };
 
   const { data, error } = await db.from("backtests").insert(payload).select("*").single();
-  if (error || !data) throw new Error(error?.message ?? "Backtest could not be saved.");
+  if (error || !data) {
+    operation.finish({
+      status: "failed",
+      error: error ?? new Error("Backtest could not be saved"),
+    });
+    throw new Error(error?.message ?? "Backtest could not be saved.");
+  }
+  operation.finish({ status: "completed", records: 1 });
+  return toBacktestRow(data);
+}
 
+function toBacktestRow(value: unknown): BacktestRow {
+  const row = value as Record<string, unknown>;
   return {
-    id: String(data.id),
-    label: (data.label as string | null) ?? null,
-    date_from: String(data.date_from),
-    date_to: String(data.date_to),
-    strategy_ids: (data.strategy_ids ?? []) as string[],
-    results: data.results as unknown as BacktestResults,
-    created_at: String(data.created_at),
+    id: String(row["id"]),
+    label: (row["label"] as string | null) ?? null,
+    date_from: String(row["date_from"]),
+    date_to: String(row["date_to"]),
+    strategy_ids: (row["strategy_ids"] ?? []) as string[],
+    results: row["results"] as BacktestResults,
+    contract_version: String(row["contract_version"] ?? ANALYTICS_CONTRACT_VERSION),
+    model_version: String(row["model_version"] ?? ANALYTICS_MODEL_VERSION),
+    feature_version: String(row["feature_version"] ?? ANALYTICS_FEATURE_VERSION),
+    strategy_set_version: String(row["strategy_set_version"] ?? ANALYTICS_STRATEGY_SET_VERSION),
+    parameters_hash: String(row["parameters_hash"] ?? ""),
+    source_draw_watermark: (row["source_draw_watermark"] as string | null) ?? null,
+    execution_status: String(row["execution_status"] ?? "completed"),
+    job_id: (row["job_id"] as string | null) ?? null,
+    created_at: String(row["created_at"]),
   };
 }
 
@@ -304,27 +366,11 @@ export async function listSavedBacktests(db: Db, limit = 20): Promise<BacktestRo
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);
-  return (data ?? []).map((row) => ({
-    id: String(row.id),
-    label: (row.label as string | null) ?? null,
-    date_from: String(row.date_from),
-    date_to: String(row.date_to),
-    strategy_ids: (row.strategy_ids ?? []) as string[],
-    results: row.results as unknown as BacktestResults,
-    created_at: String(row.created_at),
-  }));
+  return (data ?? []).map(toBacktestRow);
 }
 
 export async function getSavedBacktest(db: Db, id: string): Promise<BacktestRow | null> {
   const { data, error } = await db.from("backtests").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
-  return {
-    id: String(data.id),
-    label: (data.label as string | null) ?? null,
-    date_from: String(data.date_from),
-    date_to: String(data.date_to),
-    strategy_ids: (data.strategy_ids ?? []) as string[],
-    results: data.results as unknown as BacktestResults,
-    created_at: String(data.created_at),
-  };
+  return toBacktestRow(data);
 }

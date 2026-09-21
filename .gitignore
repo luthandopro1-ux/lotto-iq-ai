@@ -39,6 +39,10 @@ dist-ssr
 .env.*
 !.env.example
 
+# Python build/test artifacts
+__pycache__/
+*.py[cod]
+
 # Package manager lockfiles this project doesn't use — npm (package-lock.json)
 # is the one true lockfile; a stray bun/yarn/pnpm lockfile can confuse
 # auto-detecting build systems (this caused a real Cloudflare Workers Builds
