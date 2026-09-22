@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { asNumberArray, countVisibleMatches, flattenRowsToRanking } from "./customer.functions";
+import {
+  asCandidates,
+  asNumberArray,
+  countVisibleMatches,
+  flattenRowsToRanking,
+  selectPredictionForTarget,
+} from "./customer.functions";
 
 // Matches predict.ts's real PickedNumber shape.
 function pickedNumber(n: number, overrides: Partial<Record<string, unknown>> = {}) {
@@ -74,5 +80,49 @@ describe("flattenRowsToRanking (predictions.rows)", () => {
   it("skips malformed rows without throwing", () => {
     const rows = [null, "not a row", predictionRow(4, 17, 23)];
     expect(flattenRowsToRanking(rows, 7)).toEqual([4, 17, 23]);
+  });
+});
+
+describe("asCandidates (stored ensemble projection)", () => {
+  it("returns only bounded, unique, score-safe candidate details", () => {
+    expect(
+      asCandidates([
+        { number: 4, score: 4.25, agreement: 3, strategies: ["Private strategy"] },
+        { number: 4, score: 3, agreement: 2 },
+        { number: 17, score: Number.POSITIVE_INFINITY, agreement: 2 },
+        { number: 23, score: 1.5, agreement: -1 },
+        { number: 31, score: 2, agreement: 1 },
+      ]),
+    ).toEqual([
+      { number: 4, score: 4.25, agreement: 3 },
+      { number: 31, score: 2, agreement: 1 },
+    ]);
+  });
+});
+
+describe("selectPredictionForTarget", () => {
+  const prediction = (date: string, session: string) => ({
+    targetDate: date,
+    targetSession: session,
+  });
+
+  it("selects only the prediction for the scheduled date and session", () => {
+    const scheduled = prediction("2026-09-22", "lunch");
+    const historical = prediction("2026-09-21", "teatime");
+    expect(
+      selectPredictionForTarget([historical, scheduled] as never, {
+        date: "2026-09-22",
+        session: "lunch",
+      }),
+    ).toBe(scheduled);
+  });
+
+  it("does not relabel a previous draw as today when the scheduled run is absent", () => {
+    expect(
+      selectPredictionForTarget([prediction("2026-09-21", "teatime")] as never, {
+        date: "2026-09-22",
+        session: "lunch",
+      }),
+    ).toBeNull();
   });
 });

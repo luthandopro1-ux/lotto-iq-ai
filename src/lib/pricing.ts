@@ -1,4 +1,9 @@
-export type PremiumPlanCode = "weekly" | "monthly" | "yearly";
+/**
+ * The public Premium catalog intentionally has one plan. Historical entitlement
+ * records may still carry legacy intervals, but no legacy plan is presented or
+ * selectable in the client application.
+ */
+export type PremiumPlanCode = "monthly";
 
 export type PremiumPlan = {
   code: PremiumPlanCode;
@@ -12,15 +17,6 @@ export type PremiumPlan = {
 
 export const PREMIUM_PLANS: readonly PremiumPlan[] = [
   {
-    code: "weekly",
-    label: "7-day Premium",
-    intervalLabel: "Every 7 days",
-    durationDays: 7,
-    priceZarMinor: 7000,
-    discountPercent: 0,
-    autoRenew: true,
-  },
-  {
     code: "monthly",
     label: "Monthly Premium",
     intervalLabel: "Every 30 days",
@@ -29,16 +25,10 @@ export const PREMIUM_PLANS: readonly PremiumPlan[] = [
     discountPercent: 0,
     autoRenew: true,
   },
-  {
-    code: "yearly",
-    label: "Yearly Premium",
-    intervalLabel: "Every 12 months",
-    durationDays: 365,
-    priceZarMinor: 302400,
-    discountPercent: 10,
-    autoRenew: true,
-  },
 ];
+
+/** The only public Premium subscription plan. */
+export const PREMIUM_PLAN = PREMIUM_PLANS[0]!;
 
 export const BASE_PRICING_CURRENCY = "ZAR" as const;
 
