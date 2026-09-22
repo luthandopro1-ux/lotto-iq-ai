@@ -6,10 +6,15 @@ import type { AccessContext, AccessRole } from "@/lib/access-types";
 // already used in account.functions.ts: keep the query surface explicit
 // until generated Supabase types include the newer tables/functions.
 type MaybeSingleResult = Promise<{ data: Record<string, unknown> | null; error: Error | null }>;
+type BootstrapResult = Promise<{
+  data: Array<{ user_id: string; workspace_id: string; workspace_name: string }> | null;
+  error: Error | null;
+}>;
 type AuthorizationDb = {
-  rpc: (
+  rpc(
     fn: "is_administrator" | "get_my_access_status",
-  ) => Promise<{ data: boolean | string | null; error: Error | null }>;
+  ): Promise<{ data: boolean | string | null; error: Error | null }>;
+  rpc(fn: "bootstrap_personal_account", args: { p_display_name: null }): BootstrapResult;
   from: (table: string) => {
     select: (columns: string) => {
       eq: (column: string, value: string) => { maybeSingle: () => MaybeSingleResult };
@@ -23,10 +28,9 @@ type AuthorizationDb = {
  * caller's own JWT). Every query here runs under the caller's own RLS
  * policies — this function grants no additional privilege on its own.
  *
- * Role precedence: administrator > premium > free. A user with no
- * bootstrapped workspace yet (ensurePersonalAccount not called) resolves
- * to "free" rather than erroring, since that's a legitimate transient
- * state for a newly-registered account.
+ * Role precedence: administrator > premium > free. A missing personal
+ * workspace is repaired through the existing idempotent, security-definer
+ * bootstrap RPC instead of returning an empty dashboard context.
  */
 export async function resolveAccessContext(
   supabase: unknown,
@@ -65,12 +69,26 @@ export async function resolveAccessContext(
 
   const workspaceId = workspace.data ? String(workspace.data["id"]) : null;
   if (!workspaceId) {
+    const bootstrap = await db.rpc("bootstrap_personal_account", {
+      p_display_name: null,
+    });
+    if (bootstrap.error) {
+      throw new Error(`Failed to bootstrap personal workspace: ${bootstrap.error.message}`);
+    }
+    const createdWorkspace = bootstrap.data?.[0];
+    const bootstrappedWorkspaceId = createdWorkspace?.workspace_id
+      ? String(createdWorkspace.workspace_id)
+      : null;
+    if (!bootstrappedWorkspaceId) {
+      throw new Error("Failed to bootstrap personal workspace: no workspace was returned");
+    }
+
     return {
       userId,
       role: "free",
-      workspaceId: null,
-      planCode: null,
-      planStatus: null,
+      workspaceId: bootstrappedWorkspaceId,
+      planCode: "free",
+      planStatus: "active",
       betaAccess: false,
       betaExpiresAt: null,
     };
