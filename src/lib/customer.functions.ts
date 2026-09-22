@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAccessContext } from "@/lib/authorization.server";
 import { SESSIONS } from "@/lib/uk49";
+import { nextTarget } from "@/lib/sessions";
 
 const formulaInput = z.object({
   name: z.string().trim().min(2).max(120),
@@ -57,6 +58,7 @@ export type CustomerDashboard = {
   wheel: CustomerWheel[];
   analysisNumbers: number[];
   videos: CustomerVideo[];
+  nextReview: { date: string; session: string };
   featureVisibility: {
     ledger: false;
     strategyUpload: false;
@@ -98,6 +100,7 @@ export type PremiumWorkspace = {
     ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
   }>;
   candidateDescriptions: Array<{ number: number; rationale: string }>;
+  nextReview: { date: string; session: string };
 };
 type QueryResult = { data: Row[] | Row | null; error: { message: string } | null };
 type QueryBuilder = Promise<QueryResult> & {
@@ -276,6 +279,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         wheel: [],
         analysisNumbers: [],
         videos: [],
+        nextReview: nextTarget(),
         featureVisibility: {
           ledger: false,
           strategyUpload: false,
@@ -374,6 +378,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
           duration: "01:56",
         },
       ],
+      nextReview: nextTarget(),
       featureVisibility: {
         ledger: false,
         strategyUpload: false,
@@ -524,6 +529,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
             ? `${candidate.agreement} strategy signals agree on this candidate.`
             : "Candidate retained in the latest stored analysis snapshot.",
       })),
+      nextReview: nextTarget(),
     };
   });
 
