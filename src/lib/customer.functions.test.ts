@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { asNumberArray, flattenRowsToRanking } from "./customer.functions";
+import { asNumberArray, countVisibleMatches, flattenRowsToRanking } from "./customer.functions";
 
 // Matches predict.ts's real PickedNumber shape.
 function pickedNumber(n: number, overrides: Partial<Record<string, unknown>> = {}) {
@@ -39,6 +39,13 @@ describe("asNumberArray (predictions.pool)", () => {
     expect(asNumberArray(null, 14)).toEqual([]);
     expect(asNumberArray(undefined, 14)).toEqual([]);
     expect(asNumberArray("not an array", 14)).toEqual([]);
+  });
+});
+
+describe("countVisibleMatches", () => {
+  it("counts only numbers in the displayed client pool", () => {
+    const visiblePool = Array.from({ length: 14 }, (_, index) => index + 1);
+    expect(countVisibleMatches(visiblePool, [2, 9, 22, 37])).toBe(2);
   });
 });
 

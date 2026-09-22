@@ -36,7 +36,7 @@ function StateBadge({ state }: { state: string }) {
 export const Route = createFileRoute("/predictions")({
   head: () => ({
     meta: [
-      { title: "Daily Prediction Chart — Lotto IQ AI" },
+      { title: "Daily Prediction Chart — Lotto IQ" },
       {
         name: "description",
         content:
@@ -245,6 +245,7 @@ function PredictionsPage() {
         {SESSIONS.map((session) => {
           const slot = board.find((b) => b.session === session);
           const p = slot?.prediction ?? null;
+          const visiblePool = p?.pool.slice(0, 14) ?? [];
           const grading = (p?.grading ?? null) as Grading | null;
           const rows = (p?.rows ?? []) as unknown as PredictionRow[];
           const drawn = slot?.draw ?? null;
@@ -263,7 +264,8 @@ function PredictionsPage() {
                   )}
                   {grading ? (
                     <span className="rounded-lg bg-primary/15 px-2 py-1 font-semibold text-primary">
-                      {grading.matched} of {p?.pool.length ?? 0} candidates hit
+                      {visiblePool.filter((picked) => grading.actual.includes(picked.n)).length} of{" "}
+                      {visiblePool.length} visible candidates hit
                     </span>
                   ) : drawn ? (
                     <span className="text-muted-foreground">drawn, no saved prediction</span>
@@ -282,10 +284,27 @@ function PredictionsPage() {
               }
             >
               {drawn && (
-                <p className="mb-3 font-mono text-xs text-muted-foreground">
-                  Actual: {drawn.numbers.map(pad).join(" · ")}
-                  {drawn.booster != null ? ` · B${pad(drawn.booster)}` : ""}
-                </p>
+                <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>Actual:</span>
+                  {drawn.numbers.map((number) => (
+                    <Ball
+                      key={number}
+                      n={number}
+                      variant={
+                        visiblePool.some((picked) => picked.n === number) ? "matched" : "accent"
+                      }
+                      className="!size-7 !text-[10px]"
+                    />
+                  ))}
+                  {drawn.booster != null && (
+                    <Ball
+                      n={drawn.booster}
+                      variant="accent"
+                      className="!size-7 !text-[10px]"
+                      title={`UK49 booster ${drawn.booster}`}
+                    />
+                  )}
+                </div>
               )}
 
               {p && (
@@ -330,7 +349,14 @@ function PredictionsPage() {
                             <Ball n={x.n} size="sm" />
                             <span className="text-muted-foreground">score {x.score}</span>
                             <span className="text-primary">{x.strategies.join(", ")}</span>
-                            {grading && <Flag hit={grading.actual.includes(x.n)} />}
+                            {grading && (
+                              <Flag
+                                hit={
+                                  visiblePool.some((picked) => picked.n === x.n) &&
+                                  grading.actual.includes(x.n)
+                                }
+                              />
+                            )}
                           </div>
                         ))}
                     </div>

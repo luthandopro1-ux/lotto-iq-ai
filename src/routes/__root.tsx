@@ -98,26 +98,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#00D1B2" },
-      { title: "Lotto IQ AI — UK49 Strategy Analysis by Lum Tech Solutions" },
+      { title: "Lotto IQ — UK49 Strategy Analysis by Lum Tech Solutions" },
       {
         name: "description",
         content:
-          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ AI by Lum Tech Solutions.",
+          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ by Lum Tech Solutions.",
       },
       { name: "author", content: "Lum Tech Solutions" },
-      { property: "og:title", content: "Lotto IQ AI — UK49 Strategy Analysis" },
+      { property: "og:title", content: "Lotto IQ — UK49 Strategy Analysis" },
       {
         property: "og:description",
         content:
-          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ AI by Lum Tech Solutions.",
+          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ by Lum Tech Solutions.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Lotto IQ AI — UK49 Strategy Analysis" },
+      { name: "twitter:title", content: "Lotto IQ — UK49 Strategy Analysis" },
       {
         name: "twitter:description",
         content:
-          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ AI by Lum Tech Solutions.",
+          "Explore UK49 draw history, compare strategy signals, and stress-test your own analysis workflow with Lotto IQ by Lum Tech Solutions.",
       },
       { property: "og:image", content: "/og-image.png" },
       { name: "twitter:image", content: "/og-image.png" },

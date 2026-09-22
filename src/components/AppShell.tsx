@@ -152,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/dashboard" className="flex items-center gap-2.5">
             <BrandMark className="size-9 rounded-xl" />
             <span className="font-display text-lg font-bold tracking-tight">
-              Lotto<span className="gradient-text">IQ</span> AI
+              Lotto <span className="gradient-text">IQ</span>
             </span>
           </Link>
 
@@ -181,7 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <footer className="mx-auto max-w-7xl space-y-1 px-4 pb-10 text-xs text-muted-foreground sm:px-6">
         <BrandCopyright />
         <p>
-          Lotto IQ AI analyses historical UK49 and Russian lottery results against strategies you
+          Lotto IQ analyses historical UK49 and Russian lottery results against strategies you
           define. It does not predict outcomes — lottery draws are random.
         </p>
       </footer>

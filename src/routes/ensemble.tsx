@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/ensemble")({
   head: () => ({
     meta: [
-      { title: "Ensemble Confirmation — Lotto IQ AI" },
+      { title: "Ensemble Confirmation — Lotto IQ" },
       {
         name: "description",
         content:

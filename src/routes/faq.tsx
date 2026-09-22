@@ -4,10 +4,10 @@ import { PublicPageShell, PublicSection } from "@/components/PublicPageShell";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — FAQ" },
+      { title: "Lotto IQ — FAQ" },
       {
         name: "description",
-        content: "Frequently asked questions about Lotto IQ AI by Lum Tech Solutions.",
+        content: "Frequently asked questions about Lotto IQ by Lum Tech Solutions.",
       },
     ],
   }),
@@ -17,11 +17,11 @@ export const Route = createFileRoute("/faq")({
 function FaqPage() {
   return (
     <PublicPageShell eyebrow="FAQ" title="Frequently asked questions">
-      <PublicSection title="What is Lotto IQ AI?">
+      <PublicSection title="What is Lotto IQ?">
         <p>
-          Lotto IQ AI is a historical lottery-results and strategy-analysis workspace developed by
-          Lum Tech Solutions. It helps users inspect draw data, define strategies, compare signals,
-          and understand historical results.
+          Lotto IQ is a historical lottery-results and strategy-analysis workspace developed by Lum
+          Tech Solutions. It helps users inspect draw data, define strategies, compare signals, and
+          understand historical results.
         </p>
       </PublicSection>
       <PublicSection title="Does it predict winning numbers?">

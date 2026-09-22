@@ -1,4 +1,4 @@
-# Lotto IQ AI Client Access Security Notes
+# Lotto IQ Client Access Security Notes
 
 **Developer and maintainer:** Lum Tech Solutions
 **Review date:** 19 September 2026

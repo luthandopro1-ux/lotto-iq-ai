@@ -1,5 +1,5 @@
 /**
- * LottoIQ AI brand mark — corporate identity per the brand sheet
+ * Lotto IQ brand mark — corporate identity per the brand sheet
  * (Navy #0B1B33, Teal #00D1B2, Blue #3B82F6, Purple #8B5CF6).
  *
  * Rendered as inline SVG (not a raster image) so it stays crisp at any
@@ -14,7 +14,7 @@ export function BrandMark({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Lotto IQ AI"
+      aria-label="Lotto IQ"
     >
       <defs>
         <linearGradient id="lottoIqMarkGradient" x1="10%" y1="0%" x2="95%" y2="100%">

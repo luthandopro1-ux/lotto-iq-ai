@@ -18,7 +18,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Typecheck
         run: npm run typecheck
@@ -31,3 +31,9 @@ jobs:
 
       - name: Validate Cloudflare Worker bundle (dry run, no deploy)
         run: npx wrangler deploy --config .output/server/wrangler.json --dry-run
+
+      - name: Validate phase-gated analytics service Python syntax
+        run: python3 -m compileall -q analytics-service/app
+
+      - name: Validate phase-gated analytics migration is present
+        run: test -s supabase/migrations/20260921150000_analytics_phase1_foundation.sql

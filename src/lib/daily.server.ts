@@ -337,6 +337,72 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     if (passed) continue; // never invent a prediction after the fact
     if (strategies.length === 0) continue;
 
+    // Product contract: Brunch and Lunch share one live prediction. Lunch
+    // receives a separate immutable ledger row so its result can still be
+    // graded independently, while Drive Time and Tea Time remain fresh
+    // per-session predictions generated from the latest verified history.
+    const brunchPrediction = session === "lunch" ? predictionFor(targetDate, "brunch") : null;
+    if (brunchPrediction) {
+      const brunch = brunchPrediction as never as Record<string, unknown>;
+      const pairedPayload = {
+        target_date: targetDate,
+        target_session: session,
+        banker: brunch["banker"],
+        bankers: brunch["bankers"],
+        rows: brunch["rows"],
+        pool: brunch["pool"],
+        sequence: brunch["sequence"],
+        learning: brunch["learning"],
+        strategy_count: brunch["strategy_count"],
+        history_depth: brunch["history_depth"],
+        history_cutoff_date: brunch["history_cutoff_date"],
+        history_cutoff_session: brunch["history_cutoff_session"],
+        history_cutoff_draw_id: brunch["history_cutoff_draw_id"],
+        model_version: brunch["model_version"],
+        feature_version: brunch["feature_version"],
+        strategy_version: brunch["strategy_version"],
+        status: "pending",
+        session_state: "PREDICTION_READY",
+        generated_at: new Date().toISOString(),
+        locked_at: new Date().toISOString(),
+      };
+      const { data: pairedSaved, error: pairedSaveError } = await db
+        .from("predictions")
+        .upsert(pairedPayload as never, {
+          onConflict: "target_date,target_session",
+          ignoreDuplicates: true,
+        })
+        .select("*")
+        .maybeSingle();
+      if (pairedSaveError)
+        syncErrors.push(`${cfg.label} paired prediction not saved: ${pairedSaveError.message}`);
+      if (pairedSaved) predictions.unshift(pairedSaved);
+
+      const { data: brunchAnalysis } = await db
+        .from("analysis_runs")
+        .select("previous_draw_ids,top_numbers,top_pairs,breakdown,strategy_count,trigger")
+        .eq("target_date", targetDate)
+        .eq("target_session", "brunch")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (brunchAnalysis) {
+        const { error: pairedAnalysisError } = await db.from("analysis_runs").insert({
+          target_date: targetDate,
+          target_session: session,
+          previous_draw_ids: brunchAnalysis.previous_draw_ids,
+          top_numbers: brunchAnalysis.top_numbers,
+          top_pairs: brunchAnalysis.top_pairs,
+          breakdown: brunchAnalysis.breakdown,
+          strategy_count: brunchAnalysis.strategy_count,
+          trigger: "daily-board",
+        });
+        if (pairedAnalysisError)
+          syncErrors.push(`${cfg.label} paired ensemble not saved: ${pairedAnalysisError.message}`);
+      }
+      continue;
+    }
+
     const learning = buildLearning(graded, targetDate, {
       targetDate,
       targetSession: session,

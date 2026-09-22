@@ -116,11 +116,7 @@
 }
 
 @utility glass {
-  background: linear-gradient(
-    160deg,
-    oklch(0.98 0.01 250 / 8%),
-    oklch(0.98 0.01 250 / 3%)
-  );
+  background: linear-gradient(160deg, oklch(0.98 0.01 250 / 8%), oklch(0.98 0.01 250 / 3%));
   border: 1px solid var(--color-border);
   backdrop-filter: blur(18px) saturate(140%);
   box-shadow: var(--shadow-panel);
@@ -160,11 +156,22 @@
 }
 
 @utility ball-primary {
-  box-shadow: 0 0 0 2px var(--color-primary), var(--shadow-glow);
+  box-shadow:
+    0 0 0 2px var(--color-primary),
+    var(--shadow-glow);
 }
 
 @utility ball-accent {
   box-shadow: 0 0 0 2px var(--color-accent);
+}
+@utility ball-matched {
+  box-shadow:
+    0 0 0 3px #facc15,
+    0 0 0 6px color-mix(in oklab, #facc15 42%, transparent),
+    0 0 18px color-mix(in oklab, #facc15 65%, transparent);
+  border-color: #fef08a;
+  position: relative;
+  z-index: 1;
 }
 
 @utility ball-sm {

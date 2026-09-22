@@ -58,6 +58,8 @@ describe("resolveAccessContext", () => {
       workspaceId: null,
       planCode: null,
       planStatus: null,
+      betaAccess: false,
+      betaExpiresAt: null,
     });
   });
 
@@ -140,7 +142,14 @@ describe("resolveAccessContext", () => {
 });
 
 describe("hasCapability", () => {
-  const base = { userId: "u", workspaceId: null, planCode: null, planStatus: null };
+  const base = {
+    userId: "u",
+    workspaceId: null,
+    planCode: null,
+    planStatus: null,
+    betaAccess: false,
+    betaExpiresAt: null,
+  };
 
   it("unauthenticated has no capabilities", () => {
     const ctx: AccessContext = { ...base, role: "unauthenticated" };

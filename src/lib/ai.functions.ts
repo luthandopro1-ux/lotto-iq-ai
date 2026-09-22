@@ -74,7 +74,7 @@ export const aiInsights = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { gatewayJson } = await import("./ai-gateway.server");
     const result = (await gatewayJson(
-      `You are a lottery strategy analyst for the Lotto IQ AI platform.
+      `You are a lottery strategy analyst for the Lotto IQ platform.
 You receive a statistical summary of historical UK49 draws and user-defined strategy outputs.
 Return strict JSON: {"headline":"...","insights":[{"title":"...","detail":"..."}],"caveat":"..."}
 Give at most 5 insights. Cover strategy overlap, recurring calculations, historical trends and

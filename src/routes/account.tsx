@@ -11,7 +11,7 @@ import { getAccessContext } from "@/lib/customer.functions";
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Customer Account" },
+      { title: "Lotto IQ — Customer Account" },
       {
         name: "description",
         content: "Create or access your personal Lotto IQ workspace by Lum Tech Solutions.",

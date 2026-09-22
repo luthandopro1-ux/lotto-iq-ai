@@ -10,7 +10,7 @@ import { SESSIONS, SESSION_LABELS, type SessionKey } from "@/lib/uk49";
 export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
-      { title: "Prediction Ledger — Lotto IQ AI" },
+      { title: "Prediction Ledger — Lotto IQ" },
       {
         name: "description",
         content:

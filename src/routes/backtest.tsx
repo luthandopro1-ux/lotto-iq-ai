@@ -24,7 +24,7 @@ import {
 export const Route = createFileRoute("/backtest")({
   head: () => ({
     meta: [
-      { title: "Backtesting — Lotto IQ AI" },
+      { title: "Backtesting — Lotto IQ" },
       {
         name: "description",
         content:

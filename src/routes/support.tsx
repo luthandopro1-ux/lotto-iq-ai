@@ -5,10 +5,10 @@ import { PublicPageShell, PublicSection } from "@/components/PublicPageShell";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Lotto IQ AI — Support" },
+      { title: "Lotto IQ — Support" },
       {
         name: "description",
-        content: "Support and troubleshooting for Lotto IQ AI by Lum Tech Solutions.",
+        content: "Support and troubleshooting for Lotto IQ by Lum Tech Solutions.",
       },
     ],
   }),
@@ -19,7 +19,7 @@ function SupportPage() {
   return (
     <PublicPageShell eyebrow="Support" title="Get help with your Lotto IQ workflow">
       <p>
-        Support is provided for the Lotto IQ AI product developed by Lum Tech Solutions. Please
+        Support is provided for the Lotto IQ product developed by Lum Tech Solutions. Please
         describe the page, action, time, and visible error. Never include your password, session
         token, admin key, service-role key, or other secret.
       </p>

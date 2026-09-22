@@ -39,7 +39,15 @@ export async function resolveAccessContext(
     throw new Error(`Failed to resolve administrator status: ${adminCheck.error.message}`);
   }
   if (adminCheck.data === true) {
-    return { userId, role: "administrator", workspaceId: null, planCode: null, planStatus: null };
+    return {
+      userId,
+      role: "administrator",
+      workspaceId: null,
+      planCode: null,
+      planStatus: null,
+      betaAccess: false,
+      betaExpiresAt: null,
+    };
   }
 
   const accessStatus = await db.rpc("get_my_access_status");
@@ -57,12 +65,20 @@ export async function resolveAccessContext(
 
   const workspaceId = workspace.data ? String(workspace.data["id"]) : null;
   if (!workspaceId) {
-    return { userId, role: "free", workspaceId: null, planCode: null, planStatus: null };
+    return {
+      userId,
+      role: "free",
+      workspaceId: null,
+      planCode: null,
+      planStatus: null,
+      betaAccess: false,
+      betaExpiresAt: null,
+    };
   }
 
   const entitlement = await db
     .from("workspace_entitlements")
-    .select("plan_code,status")
+    .select("plan_code,status,source,early_bird_expires_at,current_period_end")
     .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (entitlement.error) {
@@ -73,9 +89,25 @@ export async function resolveAccessContext(
   const planStatus = (entitlement.data?.["status"] as string | undefined) ?? null;
   const isActivePremium =
     planCode === "premium" && (planStatus === "active" || planStatus === "trialing");
-  const role: AccessRole = isActivePremium ? "premium" : "free";
+  const betaExpiresAt =
+    typeof entitlement.data?.["early_bird_expires_at"] === "string"
+      ? String(entitlement.data["early_bird_expires_at"])
+      : null;
+  const betaAccess =
+    entitlement.data?.["source"] === "early_bird_promo" &&
+    betaExpiresAt !== null &&
+    new Date(betaExpiresAt).getTime() > Date.now();
+  const role: AccessRole = isActivePremium || betaAccess ? "premium" : "free";
 
-  return { userId, role, workspaceId, planCode, planStatus };
+  return {
+    userId,
+    role,
+    workspaceId,
+    planCode: betaAccess ? "premium" : planCode,
+    planStatus: betaAccess ? "beta" : planStatus,
+    betaAccess,
+    betaExpiresAt,
+  };
 }
 
 /**
