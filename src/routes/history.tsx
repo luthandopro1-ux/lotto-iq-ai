@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AppShell, Panel } from "@/components/AppShell";
+import { AppShell, Panel, Ball } from "@/components/AppShell";
 import { SyncLog } from "@/components/SyncLog";
 import { predictionHistory } from "@/lib/sync.functions";
 import { SESSIONS, SESSION_LABELS, type SessionKey } from "@/lib/uk49";
@@ -134,7 +134,9 @@ function HistoryPage() {
                   <td className="py-2 pr-3 text-xs text-muted-foreground">
                     {new Date(r.locked_at).toLocaleString("en-GB")}
                   </td>
-                  <td className="py-2 pr-3 font-bold">{r.banker != null ? pad(r.banker) : "—"}</td>
+                  <td className="py-2 pr-3">
+                    {r.banker != null ? <Ball n={r.banker} size="sm" /> : "—"}
+                  </td>
                   <td className="py-2 pr-3 text-xs">
                     {r.rows
                       .slice(0, 3)

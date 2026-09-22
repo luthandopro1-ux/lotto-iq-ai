@@ -220,18 +220,20 @@ export function Panel({
 export function Ball({
   n,
   variant = "default",
+  size = "md",
   className = "",
   title,
 }: {
   n: number;
   variant?: "default" | "primary" | "accent";
+  size?: "sm" | "md";
   className?: string;
   title?: string;
 }) {
   const colour = uk49ColourForNumber(n);
   return (
     <span
-      className={`ball ball-uk-${colour} ${variant === "primary" ? "ball-primary" : variant === "accent" ? "ball-accent" : ""} ${className}`}
+      className={`ball ball-uk-${colour} ${variant === "primary" ? "ball-primary" : variant === "accent" ? "ball-accent" : ""} ${size === "sm" ? "ball-sm" : ""} ${className}`}
       title={title ?? `UK49 ${UK49_COLOUR_LABELS[colour]} ball · ${n}`}
       aria-label={`Number ${n}, ${UK49_COLOUR_LABELS[colour]} UK49 ball`}
     >

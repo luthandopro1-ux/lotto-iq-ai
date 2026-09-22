@@ -167,6 +167,12 @@
   box-shadow: 0 0 0 2px var(--color-accent);
 }
 
+@utility ball-sm {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.7rem;
+}
+
 @utility ball-uk-green {
   background: linear-gradient(150deg, #22c55e, #15803d);
   color: #ffffff;

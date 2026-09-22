@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AppShell, Panel } from "@/components/AppShell";
+import { AppShell, Panel, Ball } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { runDailyBoard } from "@/lib/predict.functions";
 import { SESSION_LABELS, SESSIONS, type SessionKey } from "@/lib/uk49";
@@ -99,31 +99,31 @@ function Chart({ rows, grading }: { rows: PredictionRow[]; grading: Grading | nu
               <tr key={i} className="border-t border-border/60 align-top">
                 <td className="py-2 pr-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-bold">{pad(r.banker.n)}</span>
+                    <Ball n={r.banker.n} size="sm" />
                     {g && <Flag hit={g.bankerHit} />}
                   </div>
                   <Names p={r.banker} />
                 </td>
                 <td className="py-2 pr-3">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`text-base font-bold ${g && !g.pairHits[0] ? "text-muted-foreground" : ""}`}
-                    >
-                      {pad(r.pair[0].n)}
-                    </span>
+                    <Ball
+                      n={r.pair[0].n}
+                      size="sm"
+                      className={g && !g.pairHits[0] ? "opacity-40 grayscale" : ""}
+                    />
                     <span className="text-muted-foreground">--</span>
-                    <span
-                      className={`text-base font-bold ${g && !g.pairHits[1] ? "text-muted-foreground" : ""}`}
-                    >
-                      {pad(r.pair[1].n)}
-                    </span>
+                    <Ball
+                      n={r.pair[1].n}
+                      size="sm"
+                      className={g && !g.pairHits[1] ? "opacity-40 grayscale" : ""}
+                    />
                     {g && <Flag hit={g.pairHits[0] || g.pairHits[1]} />}
                   </div>
                   <Names p={r.pair[1]} />
                 </td>
                 <td className="py-2 pr-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-bold">{pad(r.bonus.n)}</span>
+                    <Ball n={r.bonus.n} size="sm" />
                     {g && <Flag hit={g.bonusHit} />}
                   </div>
                   <Names p={r.bonus} />
@@ -326,8 +326,8 @@ function PredictionsPage() {
                       )
                         .sort((a, b) => b.score - a.score)
                         .map((x) => (
-                          <div key={x.n} className="flex flex-wrap items-baseline gap-2 text-xs">
-                            <span className="font-mono font-bold">{pad(x.n)}</span>
+                          <div key={x.n} className="flex flex-wrap items-center gap-2 text-xs">
+                            <Ball n={x.n} size="sm" />
                             <span className="text-muted-foreground">score {x.score}</span>
                             <span className="text-primary">{x.strategies.join(", ")}</span>
                             {grading && <Flag hit={grading.actual.includes(x.n)} />}
