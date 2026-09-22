@@ -1,5 +1,6 @@
 {
   "name": "lotto-iq-ai",
+  "description": "Lottery data analysis, strategy research, and historical backtesting platform.",
   "author": "Lum Tech Solutions",
   "private": true,
   "sideEffects": false,
