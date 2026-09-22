@@ -53,6 +53,23 @@ export const captureWorkspaceCountry = createServerFn({ method: "POST" })
     const { error } = await db.rpc("record_my_country_code", { p_country_code: countryCode });
     if (error) throw new Error(`Could not record country metadata: ${error.message}`);
   });
+
+type PremiumInterestDb = {
+  rpc: (fn: "register_premium_beta_interest") => Promise<{
+    data: { registered?: boolean; created_at?: string } | null;
+    error: { message: string } | null;
+  }>;
+};
+
+/** Records one authenticated user's interest without exposing the waitlist to clients. */
+export const registerPremiumBetaInterest = createServerFn({ method: "POST" })
+  .middleware([requireAccessContext])
+  .handler(async ({ context }): Promise<{ registered: boolean; createdAt: string | null }> => {
+    const db = context.supabase as unknown as PremiumInterestDb;
+    const { data, error } = await db.rpc("register_premium_beta_interest");
+    if (error) throw new Error(`Could not join the Premium waitlist: ${error.message}`);
+    return { registered: data?.registered === true, createdAt: data?.created_at ?? null };
+  });
 // Narrow RPC surface for get_early_bird_status -- not in the generated
 // Supabase types (predates this migration, same reason authorization.server.ts
 // and daily.server.ts declare their own narrow types for their RPCs).

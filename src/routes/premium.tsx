@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -28,10 +28,12 @@ import {
   captureWorkspaceCountry,
   getPricingContext,
   getEarlyBirdStatus,
+  registerPremiumBetaInterest,
 } from "@/lib/pricing.functions";
 import { formatZar, PREMIUM_PLAN } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
 import { Ball } from "@/components/AppShell";
+import { memberDisplayName } from "@/lib/member-name";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
@@ -126,6 +128,7 @@ function PremiumPage() {
 
   const workspace = premium.data;
   const prediction = workspace?.prediction ?? null;
+  const memberName = memberDisplayName(session.data.user);
 
   return (
     <PageShell>
@@ -135,12 +138,13 @@ function PremiumPage() {
             <Crown className="size-4" /> Premium workspace · Lotto IQ Team
           </p>
           <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Your draw, clearly ranked.
+            Welcome, {memberName}.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            The Premium workspace prioritizes today’s scheduled prediction, then shows the stored
-            ensemble, wheel structure, and scoreboard that support it. These are historical analysis
-            signals, not a guarantee of any outcome.
+            Your Premium membership puts the original Lotto IQ scoring engine in one clear view:
+            today’s prediction, three highly rated bankers, five ranked balls, the complete ensemble
+            analysis, full wheel structure, and the scorecard behind each signal. These are
+            analytical signals, not a guarantee of any outcome.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
@@ -152,6 +156,8 @@ function PremiumPage() {
       <PremiumEnsembleAnalysis ensemble={workspace?.ensemble ?? null} />
       <PremiumWheelStructure wheel={workspace?.wheel ?? []} />
       <PremiumAnalysisScoring ensemble={workspace?.ensemble ?? null} />
+
+      <PremiumBenefits />
 
       <PremiumSessionGrid
         sessions={workspace?.sessions ?? []}
@@ -227,8 +233,12 @@ function PremiumTodayPrediction({
   prediction: PremiumWorkspace["prediction"];
   ensemble: PremiumWorkspace["ensemble"];
 }) {
-  const topRated = ensemble?.candidates.slice(0, 3) ?? [];
-  const ranking = prediction?.ranking.slice(0, 5) ?? [];
+  const topRated = prediction?.bankers.length
+    ? prediction.bankers.slice(0, 3)
+    : (ensemble?.candidates.slice(0, 3) ?? []);
+  const ranking = prediction?.rankedBalls.length
+    ? prediction.rankedBalls.slice(0, 5)
+    : (ensemble?.candidates.slice(0, 5) ?? []);
   return (
     <section className="rounded-3xl border border-primary/25 bg-primary/[0.04] p-5 shadow-sm sm:p-7">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -258,7 +268,7 @@ function PremiumTodayPrediction({
           <div className="rounded-2xl border border-border/60 bg-background/20 p-5">
             <div className="flex items-center gap-2">
               <Target className="size-4 text-primary" />
-              <h3 className="text-sm font-semibold">3 highly rated balls</h3>
+              <h3 className="text-sm font-semibold">3 highly rated bankers</h3>
             </div>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               Highest weighted candidates from the original stored ensemble for this exact draw.
@@ -280,18 +290,21 @@ function PremiumTodayPrediction({
               <h3 className="text-sm font-semibold">5 ranking balls</h3>
             </div>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Ordered from the stored prediction rows for this scheduled draw.
+              The five highest-ranked balls from the original scoring engine for this draw.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              {ranking.map((number, index) => (
-                <div key={`${number}-${index}`} className="text-center">
+              {ranking.map((candidate, index) => (
+                <div key={`${candidate.number}-${index}`} className="text-center">
                   <Ball
-                    n={number}
+                    n={candidate.number}
                     variant={index === 0 ? "primary" : "default"}
                     className="mx-auto !size-12 !text-sm"
-                    title={`Ranking position ${index + 1} · UK49 number ${number}`}
+                    title={`Ranking position ${index + 1} · score ${candidate.score.toFixed(2)}`}
                   />
                   <span className="mt-1 block text-[10px] text-muted-foreground">#{index + 1}</span>
+                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                    {candidate.score.toFixed(2)}
+                  </span>
                 </div>
               ))}
               {!ranking.length && (
@@ -535,6 +548,37 @@ function ScoringRule({ title, detail }: { title: string; detail: string }) {
   );
 }
 
+function PremiumBenefits() {
+  return (
+    <section className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-7">
+      <SectionHeading
+        icon={Sparkles}
+        title="What your Premium membership includes"
+        subtitle="One view for the complete stored analysis, without repeating the same information in separate panels."
+      />
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Today’s prediction", "The exact scheduled draw window and publication status."],
+          [
+            "3 highly rated bankers",
+            "The strongest stored banker signals with their engine scores.",
+          ],
+          ["5 ranked balls", "The leading ranked candidates with their scoring detail."],
+          [
+            "Full wheel and ensemble",
+            "Every stored position, agreement value, and analysis score.",
+          ],
+        ].map(([title, detail]) => (
+          <div key={title} className="rounded-xl border border-border/60 bg-background/20 p-4">
+            <p className="text-sm font-semibold">{title}</p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PremiumSubscription({ countryCode }: { countryCode: string | undefined }) {
   return (
     <section className="rounded-3xl border border-primary/25 bg-primary/5 p-5 sm:p-7">
@@ -557,14 +601,53 @@ function PremiumSubscription({ countryCode }: { countryCode: string | undefined 
           disabled
           className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
         >
-          <LockKeyhole className="size-3.5" /> Checkout pending provider
+          <LockKeyhole className="size-3.5" /> Google Play Billing — coming soon
         </button>
       </div>
+      <PremiumBetaInterest />
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
         Country: <span className="font-semibold text-foreground">{countryCode ?? "…"}</span>. No
         unverified exchange-rate conversion is displayed.
       </p>
     </section>
+  );
+}
+
+function PremiumBetaInterest() {
+  const [registered, setRegistered] = useState(false);
+  const interest = useMutation({
+    mutationFn: () => registerPremiumBetaInterest(),
+    onSuccess: () => {
+      setRegistered(true);
+      toast.success(
+        "You’re on the Premium continuation list. We’ll notify you when the beta window closes.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
+        Premium beta interest
+      </p>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        Interested in Premium fixtures? Join the private notification list. If the beta capacity is
+        reached, we will notify registered members about the next availability.
+      </p>
+      <button
+        type="button"
+        disabled={registered || interest.isPending}
+        onClick={() => interest.mutate()}
+        className="mt-3 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {registered
+          ? "Interest registered"
+          : interest.isPending
+            ? "Registering…"
+            : "Notify me about Premium availability"}
+      </button>
+    </div>
   );
 }
 
@@ -731,7 +814,12 @@ function UpgradeState({
         {signedIn ? "Refresh membership" : "Sign in or create account"}{" "}
         <ArrowRight className="size-4" />
       </Link>
-      {signedIn && <EarlyBirdClaim />}
+      {signedIn && (
+        <>
+          <EarlyBirdClaim />
+          <PremiumBetaInterest />
+        </>
+      )}
     </div>
   );
 }

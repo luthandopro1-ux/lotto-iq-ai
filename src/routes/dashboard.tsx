@@ -14,6 +14,7 @@ import {
   Target,
   WandSparkles,
   Video,
+  ArrowRight,
 } from "lucide-react";
 import { AppShell, Ball, Panel } from "@/components/AppShell";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { memberDisplayName } from "@/lib/member-name";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -147,7 +149,7 @@ function ClientDashboard() {
         </div>
       </AppShell>
     );
-  return <DashboardContent data={data} />;
+  return <DashboardContent data={data} memberName={memberDisplayName(session.data.user)} />;
 }
 
 function AccessState({ title, detail }: { title: string; detail: string }) {
@@ -166,7 +168,7 @@ function AccessState({ title, detail }: { title: string; detail: string }) {
   );
 }
 
-function DashboardContent({ data }: { data: DashboardData }) {
+function DashboardContent({ data, memberName }: { data: DashboardData; memberName: string }) {
   const prediction =
     data.predictions.find((item) => item.targetDate === data.nextReview.date) ?? null;
   return (
@@ -179,12 +181,13 @@ function DashboardContent({ data }: { data: DashboardData }) {
               Client workspace <span className="text-muted-foreground">/</span> Overview
             </div>
             <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
-              Your current draw brief.
+              Welcome, {memberName}.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Your client view shows the live Brunch-to-Tea prediction schedule, verified winning
-              numbers, a simple 24-number analysis, 14 recommended numbers, and 7 bankers. Scores,
-              agreement, and strategy statistics remain Premium-only.
+              Your Free workspace includes the next scheduled prediction, verified draw results, the
+              client-safe number pool, hot and cold signals, and a simple analysis view. Premium
+              adds the complete scored ensemble, three highly rated bankers, five ranked balls, full
+              wheel structure, and transparent scoring detail.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -217,6 +220,29 @@ function DashboardContent({ data }: { data: DashboardData }) {
           <Stat icon={CheckCircle2} label="Access boundary" value="Workspace isolated" />
         </div>
         <TodayPredictionPanel prediction={prediction} nextReview={data.nextReview} />
+        <section className="rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-7">
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                Free plan
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold">
+                A useful daily brief, without the noise.
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Stay informed with the published prediction line, 14-ball client-safe pool, hot and
+                cold signals, recent results, and product education. Upgrade when you want the
+                deeper scoring engine and full Premium analysis.
+              </p>
+            </div>
+            <Link
+              to="/premium"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Explore Premium <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </section>
         <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
           <Panel
             title="14-ball pool"

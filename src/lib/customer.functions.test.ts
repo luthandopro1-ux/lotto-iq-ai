@@ -4,6 +4,7 @@ import {
   asNumberArray,
   countVisibleMatches,
   flattenRowsToRanking,
+  rankedCandidatesFromRows,
   selectPredictionForTarget,
 } from "./customer.functions";
 
@@ -84,6 +85,24 @@ describe("flattenRowsToRanking (predictions.rows)", () => {
 });
 
 describe("asCandidates (stored ensemble projection)", () => {
+  it("normalizes the original PickedNumber shape", () => {
+    expect(asCandidates([{ n: 7, score: 2.4, strategies: ["a", "b"] }])).toEqual([
+      { number: 7, score: 2.4, agreement: 2 },
+    ]);
+  });
+
+  it("keeps ranked row output stable and de-duplicated", () => {
+    expect(
+      rankedCandidatesFromRows(
+        [{ banker: pickedNumber(7, { score: 2 }), pair: [pickedNumber(7), pickedNumber(13)] }],
+        5,
+      ),
+    ).toEqual([
+      { number: 7, score: 2, agreement: 1 },
+      { number: 13, score: 1, agreement: 1 },
+    ]);
+  });
+
   it("returns only bounded, unique, score-safe candidate details", () => {
     expect(
       asCandidates([
