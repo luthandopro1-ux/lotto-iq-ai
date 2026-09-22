@@ -306,6 +306,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
   const blocked: Record<string, string | null> = {};
   const unresolved: string[] = [];
   let blockedBy: string | null = null;
+  let predictionPublishedThisRun = false;
 
   for (const session of SESSIONS) {
     const cfg = SESSION_SCHEDULE[session];
@@ -318,6 +319,12 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     // predicted until it is recovered.
     if (blockedBy) {
       blocked[session] = blockedBy;
+      continue;
+    }
+    // A scheduled tick advances one draw at a time. Later sessions must be
+    // generated from the latest verified history at their own draw window.
+    if (predictionPublishedThisRun) {
+      blocked[session] = null;
       continue;
     }
     if (passed && !existingDraw) {
@@ -400,6 +407,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
         if (pairedAnalysisError)
           syncErrors.push(`${cfg.label} paired ensemble not saved: ${pairedAnalysisError.message}`);
       }
+      predictionPublishedThisRun = true;
       continue;
     }
 
@@ -472,6 +480,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       .maybeSingle();
     if (saveError) syncErrors.push(`${cfg.label} prediction not saved: ${saveError.message}`);
     if (saved) predictions.unshift(saved);
+    predictionPublishedThisRun = true;
 
     // Persist the same-target analysis snapshot (top-5 numbers, top-5
     // pairs, per-strategy breakdown) so the Analysis page and dashboard

@@ -58,6 +58,7 @@ function numbers(draw: DrawRow) {
 }
 
 function ClientDashboard() {
+  const liveRefreshMs = 30_000;
   const navigate = useNavigate();
   const session = useQuery({
     queryKey: ["browser-session"],
@@ -77,6 +78,9 @@ function ClientDashboard() {
     queryKey: ["customer-dashboard"],
     queryFn: () => getCustomerDashboard(),
     enabled: Boolean(access.data) && access.data?.role !== "administrator",
+    refetchInterval: liveRefreshMs,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {

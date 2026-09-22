@@ -7,6 +7,7 @@
 // the vite-tanstack-config wrapper's own (narrower) options — verified
 // by building and checking .output/server/wrangler.json for `triggers`.
 export default {
+  serverDir: "./server",
   experimental: { tasks: true },
   scheduledTasks: {
     // Every minute — cheap no-op outside the four UK49 draw windows
