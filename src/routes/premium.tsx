@@ -20,6 +20,7 @@ import {
   getPremiumWorkspace,
   saveCustomerFormula,
   claimEarlyBirdPremium,
+  type PremiumCandidate,
   type PremiumWorkspace,
 } from "@/lib/customer.functions";
 import { getAccessContext } from "@/lib/customer.functions";
@@ -28,7 +29,7 @@ import {
   getPricingContext,
   getEarlyBirdStatus,
 } from "@/lib/pricing.functions";
-import { formatZar, PREMIUM_PLANS } from "@/lib/pricing";
+import { formatZar, PREMIUM_PLAN } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
 import { Ball } from "@/components/AppShell";
 
@@ -122,8 +123,9 @@ function PremiumPage() {
         <UpgradeState signedIn={Boolean(session.data)} />
       </PageShell>
     );
+
   const workspace = premium.data;
-  const prediction = workspace?.prediction;
+  const prediction = workspace?.prediction ?? null;
 
   return (
     <PageShell>
@@ -133,12 +135,12 @@ function PremiumPage() {
             <Crown className="size-4" /> Premium workspace · Lotto IQ Team
           </p>
           <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            More signal. One private workspace.
+            Your draw, clearly ranked.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            Your Premium entitlement unlocks the stored ensemble snapshot, analysis wheel, ranked
-            candidates, one banker signal, and five private formulas. Results remain historical
-            analysis and do not guarantee future outcomes.
+            The Premium workspace prioritizes today’s scheduled prediction, then shows the stored
+            ensemble, wheel structure, and scoreboard that support it. These are historical analysis
+            signals, not a guarantee of any outcome.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
@@ -146,212 +148,18 @@ function PremiumPage() {
         </div>
       </header>
 
+      <PremiumTodayPrediction prediction={prediction} ensemble={workspace?.ensemble ?? null} />
+      <PremiumEnsembleAnalysis ensemble={workspace?.ensemble ?? null} />
+      <PremiumWheelStructure wheel={workspace?.wheel ?? []} />
+      <PremiumAnalysisScoring ensemble={workspace?.ensemble ?? null} />
+
       <PremiumSessionGrid
         sessions={workspace?.sessions ?? []}
         currentDate={workspace?.currentDate}
       />
 
-      <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              Premium access plans
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-bold">Choose your renewal period</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              All plans renew automatically until cancelled. South African Rand is the
-              source-of-truth billing currency.
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Country:{" "}
-            <span className="font-semibold text-foreground">
-              {pricing.data?.countryCode ?? "…"}
-            </span>
-            {pricing.data?.countrySource === "edge" ? " · detected at edge" : " · defaulted safely"}
-          </p>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {PREMIUM_PLANS.map((plan, index) => (
-            <div
-              key={plan.code}
-              className={`relative rounded-2xl border p-5 ${index === 1 ? "border-primary/45 bg-primary/10" : "border-border/60 bg-background/20"}`}
-            >
-              {index === 1 && (
-                <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-                  Popular
-                </span>
-              )}
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {plan.label}
-              </p>
-              <p className="mt-3 font-display text-3xl font-bold">
-                {formatZar(plan.priceZarMinor)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {plan.intervalLabel} · auto-renewing
-              </p>
-              {plan.discountPercent > 0 && (
-                <p className="mt-3 inline-flex rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[11px] font-semibold text-emerald-300">
-                  {plan.discountPercent}% annual discount
-                </p>
-              )}
-              <button
-                disabled
-                className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
-              >
-                <LockKeyhole className="size-3.5" /> Checkout pending provider
-              </button>
-            </div>
-          ))}
-        </div>
-        {pricing.data?.countryCode !== "ZA" && (
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            <strong className="text-foreground">International visitor:</strong> prices are shown in
-            ZAR. Live exchange-rate conversion is not displayed until a verified FX or payment
-            provider is connected; no guessed local amount is shown.
-          </p>
-        )}
-      </section>
-
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          icon={Target}
-          label="Highly rated banker"
-          value={workspace?.banker ? String(workspace.banker).padStart(2, "0") : "—"}
-          detail="Latest verified prediction"
-        />
-        <MetricCard
-          icon={Sparkles}
-          label="14-ball pool"
-          value={prediction?.pool.length ? String(prediction.pool.length) : "—"}
-          detail={`Next review: ${premium.data?.nextReview.session ?? "—"} · ${premium.data?.nextReview.date ?? "—"}`}
-        />
-        <MetricCard
-          icon={BarChart3}
-          label="Ensemble candidates"
-          value={workspace?.ensemble?.candidates.length.toString() ?? "—"}
-          detail={`${workspace?.ensemble?.strategyCount ?? 0} stored strategy signals`}
-        />
-        <MetricCard
-          icon={FileCode2}
-          label="Private formula capacity"
-          value={`${dashboard.data?.formulas.length ?? 0}/5`}
-          detail="Workspace-only storage"
-        />
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
-        <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
-          <SectionHeading
-            icon={Sparkles}
-            title="Ensemble analysis"
-            subtitle="The latest stored snapshot, projected into Premium-safe fields."
-          />
-          {workspace?.ensemble ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {workspace.ensemble.candidates.slice(0, 8).map((candidate, index) => (
-                <div
-                  key={candidate.number}
-                  className={`rounded-2xl border p-4 ${index === 0 ? "border-primary/40 bg-primary/10" : "border-border/60 bg-background/20"}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <Ball n={candidate.number} className="!size-10 !text-sm" />
-                    <span className="text-xs text-primary">rank {index + 1}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>score {candidate.score.toFixed(2)}</span>
-                    <span>{candidate.agreement} agreements</span>
-                  </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.min(100, Math.max(0, candidate.score * 100))}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState label="No stored ensemble snapshot is available yet." />
-          )}
-        </section>
-        <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
-          <SectionHeading
-            icon={Zap}
-            title="Analysis wheel"
-            subtitle="Premium ranking view from the latest stored run."
-          />
-          <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center">
-            <img
-              src="/lotto-iq-dream-wheel.jpg"
-              alt="Lotto IQ UK 49s Dream Wheel"
-              className="mx-auto aspect-square w-full max-w-xs rounded-2xl border border-border/60 object-cover"
-            />
-            <div className="grid grid-cols-7 gap-2">
-              {(workspace?.wheel ?? []).map((item) => (
-                <Ball
-                  key={item.number}
-                  n={item.number}
-                  className="!size-10 !text-sm"
-                  title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-                />
-              ))}
-            </div>
-          </div>
-          {!workspace?.wheel.length && (
-            <EmptyState label="The wheel will populate after the next stored analysis run." />
-          )}
-          <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs leading-5 text-muted-foreground">
-            <strong className="text-primary">Responsible-use note:</strong> ranking is an analytical
-            signal, not a prediction guarantee.
-          </div>
-        </section>
-      </div>
-
       <div className="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
-        <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
-          <SectionHeading
-            icon={Target}
-            title="Banker and 7-ball ranking"
-            subtitle="The latest prediction projection available to your Premium workspace."
-          />
-          {prediction ? (
-            <>
-              <div className="mt-6 flex items-center gap-3">
-                {workspace?.banker ? (
-                  <Ball
-                    n={workspace.banker}
-                    variant="primary"
-                    className="!size-16 !rounded-2xl !text-xl"
-                  />
-                ) : (
-                  <div className="grid size-16 place-items-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-                    —
-                  </div>
-                )}
-                <div>
-                  <p className="font-semibold">Highly rated banker</p>
-                  <p className="text-xs text-muted-foreground">
-                    {prediction.status} · {prediction.targetDate} · {prediction.targetSession}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {prediction.ranking.map((number, index) => (
-                  <Ball
-                    key={`${number}-${index}`}
-                    n={number}
-                    className="!size-9 !text-xs"
-                    title={`Rank ${index + 1} · UK49 number ${number}`}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <EmptyState label="No prediction is currently stored for Premium projection." />
-          )}
-        </section>
+        <PremiumSubscription countryCode={pricing.data?.countryCode} />
         <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
           <SectionHeading
             icon={FileCode2}
@@ -405,10 +213,358 @@ function PremiumPage() {
 
       <div className="mt-6 rounded-2xl border border-border/60 bg-background/20 p-4 text-xs leading-5 text-muted-foreground">
         <strong className="text-foreground">Visibility boundary:</strong> Premium access exposes the
-        projected ensemble, wheel, ranking, and banker fields only. It does not expose global
-        strategy definitions, the Ledger, other client workspaces, or another client's formulas.
+        stored ranking, ensemble score, agreement count, and wheel only. It does not expose global
+        strategy definitions, the Ledger, other client workspaces, or another client’s formulas.
       </div>
     </PageShell>
+  );
+}
+
+function PremiumTodayPrediction({
+  prediction,
+  ensemble,
+}: {
+  prediction: PremiumWorkspace["prediction"];
+  ensemble: PremiumWorkspace["ensemble"];
+}) {
+  const topRated = ensemble?.candidates.slice(0, 3) ?? [];
+  const ranking = prediction?.ranking.slice(0, 5) ?? [];
+  return (
+    <section className="rounded-3xl border border-primary/25 bg-primary/[0.04] p-5 shadow-sm sm:p-7">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Today’s prediction
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-bold">
+            {prediction
+              ? `${prediction.targetDate} · ${prediction.targetSession}`
+              : "Awaiting the next scheduled prediction"}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            The cards below are tied to the next UK49 review window. A previous session is never
+            relabelled as today’s prediction.
+          </p>
+        </div>
+        <span className="rounded-full border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary">
+          {prediction?.status ?? "Not published"}
+        </span>
+      </div>
+
+      {!prediction ? (
+        <EmptyState label="Today’s Premium prediction has not been stored yet. The dashboard will show it after the scheduled analysis is saved." />
+      ) : (
+        <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
+          <div className="rounded-2xl border border-border/60 bg-background/20 p-5">
+            <div className="flex items-center gap-2">
+              <Target className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold">3 highly rated balls</h3>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Highest weighted candidates from the original stored ensemble for this exact draw.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {topRated.map((candidate, index) => (
+                <CandidateHighlight key={candidate.number} candidate={candidate} rank={index + 1} />
+              ))}
+              {!topRated.length && (
+                <p className="text-sm text-muted-foreground">
+                  Ensemble ratings are not stored for this draw yet.
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-background/20 p-5">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold">5 ranking balls</h3>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Ordered from the stored prediction rows for this scheduled draw.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {ranking.map((number, index) => (
+                <div key={`${number}-${index}`} className="text-center">
+                  <Ball
+                    n={number}
+                    variant={index === 0 ? "primary" : "default"}
+                    className="mx-auto !size-12 !text-sm"
+                    title={`Ranking position ${index + 1} · UK49 number ${number}`}
+                  />
+                  <span className="mt-1 block text-[10px] text-muted-foreground">#{index + 1}</span>
+                </div>
+              ))}
+              {!ranking.length && (
+                <p className="text-sm text-muted-foreground">No ranked balls are stored yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CandidateHighlight({ candidate, rank }: { candidate: PremiumCandidate; rank: number }) {
+  return (
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+        #{rank} rated
+      </span>
+      <Ball n={candidate.number} variant="primary" className="mx-auto mt-3 !size-12 !text-sm" />
+      <p className="mt-3 text-sm font-semibold">Score {candidate.score.toFixed(2)}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {candidate.agreement} strategy {candidate.agreement === 1 ? "signal" : "signals"}
+      </p>
+    </div>
+  );
+}
+
+function PremiumEnsembleAnalysis({ ensemble }: { ensemble: PremiumWorkspace["ensemble"] }) {
+  const candidates = ensemble?.candidates ?? [];
+  const maxScore = Math.max(...candidates.map((candidate) => candidate.score), 1);
+  return (
+    <section className="mt-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
+      <SectionHeading
+        icon={BarChart3}
+        title="Full ensemble analysis"
+        subtitle="The complete original stored ensemble, ranked by weighted strategy agreement for today’s scheduled draw."
+      />
+      {ensemble ? (
+        <>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <EnsembleStat label="Stored candidates" value={String(candidates.length)} />
+            <EnsembleStat label="Active strategies" value={String(ensemble.strategyCount)} />
+            <EnsembleStat label="Snapshot saved" value={formatSnapshotDate(ensemble.createdAt)} />
+          </div>
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-border/60">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-border/60 bg-background/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3">Rank</th>
+                  <th className="px-4 py-3">Ball</th>
+                  <th className="px-4 py-3">Rating</th>
+                  <th className="px-4 py-3">Weighted score</th>
+                  <th className="px-4 py-3">Agreement</th>
+                </tr>
+              </thead>
+              <tbody>
+                {candidates.map((candidate, index) => (
+                  <tr key={candidate.number} className="border-b border-border/40 last:border-0">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {String(index + 1).padStart(2, "0")}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Ball n={candidate.number} variant={index < 3 ? "primary" : "default"} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <RatingBadge score={candidate.score} maxScore={maxScore} rank={index} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex min-w-40 items-center gap-3">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, (candidate.score / maxScore) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="w-12 text-right font-mono text-xs">
+                          {candidate.score.toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {candidate.agreement} strategy{" "}
+                      {candidate.agreement === 1 ? "signal" : "signals"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <EmptyState label="No original ensemble snapshot is stored for today’s scheduled draw yet." />
+      )}
+    </section>
+  );
+}
+
+function RatingBadge({ score, maxScore, rank }: { score: number; maxScore: number; rank: number }) {
+  const fraction = score / maxScore;
+  const label =
+    rank === 0 ? "Highest" : fraction >= 0.75 ? "High" : fraction >= 0.5 ? "Supporting" : "Signal";
+  const className =
+    label === "Highest"
+      ? "border-primary/35 bg-primary/10 text-primary"
+      : label === "High"
+        ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+        : "border-border/60 bg-background/30 text-muted-foreground";
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function EnsembleStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/20 p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-2 font-display text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function formatSnapshotDate(value: string) {
+  const snapshot = new Date(value);
+  if (Number.isNaN(snapshot.valueOf())) return "Unavailable";
+  return snapshot.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function PremiumWheelStructure({ wheel }: { wheel: PremiumWorkspace["wheel"] }) {
+  return (
+    <section className="mt-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
+      <SectionHeading
+        icon={Zap}
+        title="Wheel structure"
+        subtitle="Every stored wheel position is shown with its source score and agreement detail."
+      />
+      {wheel.length ? (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(16rem,.7fr)_minmax(0,1.3fr)] lg:items-start">
+          <img
+            src="/lotto-iq-dream-wheel.jpg"
+            alt="Lotto IQ UK 49s Dream Wheel"
+            className="mx-auto aspect-square w-full max-w-xs rounded-2xl border border-border/60 object-cover"
+          />
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {wheel.map((item, index) => (
+              <div
+                key={item.number}
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/20 p-3"
+              >
+                <span className="w-5 text-xs text-muted-foreground">W{index + 1}</span>
+                <Ball
+                  n={item.number}
+                  variant={index < 3 ? "primary" : "default"}
+                  className="!size-9 !text-xs"
+                  title={`Wheel ${index + 1}: score ${item.score.toFixed(2)}, ${item.agreement} strategy signals`}
+                />
+                <div className="min-w-0 text-xs">
+                  <p className="font-semibold">{item.score.toFixed(2)} score</p>
+                  <p className="mt-0.5 text-muted-foreground">{item.agreement} agreement</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <EmptyState label="The wheel will populate after today’s stored analysis run is available." />
+      )}
+    </section>
+  );
+}
+
+function PremiumAnalysisScoring({ ensemble }: { ensemble: PremiumWorkspace["ensemble"] }) {
+  const candidates = ensemble?.candidates ?? [];
+  const maxScore = Math.max(...candidates.map((candidate) => candidate.score), 0);
+  const averageScore = candidates.length
+    ? candidates.reduce((total, candidate) => total + candidate.score, 0) / candidates.length
+    : 0;
+  const averageAgreement = candidates.length
+    ? candidates.reduce((total, candidate) => total + candidate.agreement, 0) / candidates.length
+    : 0;
+  const highSignalCount = candidates.filter(
+    (candidate) => candidate.score >= maxScore * 0.75,
+  ).length;
+  return (
+    <section className="mt-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
+      <SectionHeading
+        icon={Target}
+        title="Analysis scoring"
+        subtitle="Transparent interpretation of the original weighted-agreement model; scores are analytical weights, not probability or odds."
+      />
+      {candidates.length ? (
+        <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <EnsembleStat label="Top weighted score" value={maxScore.toFixed(2)} />
+            <EnsembleStat label="Mean weighted score" value={averageScore.toFixed(2)} />
+            <EnsembleStat label="Mean strategy agreement" value={averageAgreement.toFixed(1)} />
+            <EnsembleStat label="High-signal candidates" value={String(highSignalCount)} />
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <ScoringRule
+              title="Weighted score"
+              detail="The engine adds the configured weight of every active strategy that produced a candidate."
+            />
+            <ScoringRule
+              title="Agreement"
+              detail="The count shows how many distinct active strategies produced the same number in the stored run."
+            />
+            <ScoringRule
+              title="Ranking"
+              detail="Candidates are ordered by weighted score, then agreement count, then ball number for a stable tie-break."
+            />
+          </div>
+        </>
+      ) : (
+        <EmptyState label="Analysis scoring will appear once the scheduled ensemble is stored." />
+      )}
+    </section>
+  );
+}
+
+function ScoringRule({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/20 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Check className="size-4 text-primary" />
+        {title}
+      </div>
+      <p className="mt-3 text-xs leading-5 text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function PremiumSubscription({ countryCode }: { countryCode: string | undefined }) {
+  return (
+    <section className="rounded-3xl border border-primary/25 bg-primary/5 p-5 sm:p-7">
+      <SectionHeading
+        icon={Crown}
+        title="Premium subscription"
+        subtitle="One clear monthly plan. South African Rand is the source-of-truth billing currency."
+      />
+      <div className="mt-6 rounded-2xl border border-primary/35 bg-background/30 p-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+          {PREMIUM_PLAN.label}
+        </p>
+        <p className="mt-3 font-display text-4xl font-bold">
+          {formatZar(PREMIUM_PLAN.priceZarMinor)}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {PREMIUM_PLAN.intervalLabel} · auto-renewing until cancelled
+        </p>
+        <button
+          disabled
+          className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-semibold text-muted-foreground"
+        >
+          <LockKeyhole className="size-3.5" /> Checkout pending provider
+        </button>
+      </div>
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">
+        Country: <span className="font-semibold text-foreground">{countryCode ?? "…"}</span>. No
+        unverified exchange-rate conversion is displayed.
+      </p>
+    </section>
   );
 }
 
@@ -429,7 +585,7 @@ function PremiumSessionGrid({
     ["teatime", "Tea Time"],
   ] as const;
   return (
-    <section className="mb-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-7">
+    <section className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-7">
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -529,6 +685,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
     </main>
   );
 }
+
 function LoadingState() {
   return (
     <div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground">
@@ -536,6 +693,7 @@ function LoadingState() {
     </div>
   );
 }
+
 function UpgradeState({
   signedIn,
   title = "Premium workspace access",
@@ -555,6 +713,17 @@ function UpgradeState({
             ? "Your account is currently on the Free plan. Premium analysis becomes available after a verified entitlement is active."
             : "Sign in to view your membership and Premium access state.")}
       </p>
+      <div className="mt-6 rounded-2xl border border-primary/25 bg-background/30 p-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+          {PREMIUM_PLAN.label}
+        </p>
+        <p className="mt-2 font-display text-3xl font-bold">
+          {formatZar(PREMIUM_PLAN.priceZarMinor)}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {PREMIUM_PLAN.intervalLabel} · auto-renewing
+        </p>
+      </div>
       <Link
         to={signedIn ? "/premium" : "/account"}
         className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
@@ -623,6 +792,7 @@ function EarlyBirdClaim() {
     </div>
   );
 }
+
 function SectionHeading({
   icon: Icon,
   title,
@@ -644,26 +814,7 @@ function SectionHeading({
     </div>
   );
 }
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card/30 p-5">
-      <Icon className="size-4 text-primary" />
-      <p className="mt-4 font-display text-2xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-2 text-[11px] text-muted-foreground">{detail}</p>
-    </div>
-  );
-}
+
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">

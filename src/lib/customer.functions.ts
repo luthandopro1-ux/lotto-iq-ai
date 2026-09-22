@@ -72,7 +72,6 @@ export type PremiumCandidate = {
   number: number;
   score: number;
   agreement: number;
-  strategies: string[];
 };
 export type PremiumWorkspace = {
   formulaLimit: 5;
@@ -197,24 +196,36 @@ export function flattenRowsToRanking(value: unknown, max: number): number[] {
   }
   return result;
 }
-function asCandidates(value: unknown): PremiumCandidate[] {
+/**
+ * Parses the stored, server-generated ranking projection. Strategy names are
+ * deliberately excluded: they can identify proprietary formula definitions
+ * and are not needed to render a candidate's score or agreement count.
+ */
+export function asCandidates(value: unknown): PremiumCandidate[] {
   if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    if (!item || typeof item !== "object") return [];
+  const seen = new Set<number>();
+  const result: PremiumCandidate[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
     const row = item as Record<string, unknown>;
     const number = Number(row["number"]);
-    if (!Number.isInteger(number) || number < 1 || number > 49) return [];
-    return [
-      {
-        number,
-        score: Number(row["score"] ?? 0),
-        agreement: Number(row["agreement"] ?? 0),
-        strategies: Array.isArray(row["strategies"])
-          ? row["strategies"].filter((s): s is string => typeof s === "string").slice(0, 5)
-          : [],
-      },
-    ];
-  });
+    const rawScore = Number(row["score"] ?? 0);
+    const rawAgreement = Number(row["agreement"] ?? 0);
+    if (
+      !Number.isInteger(number) ||
+      number < 1 ||
+      number > 49 ||
+      seen.has(number) ||
+      !Number.isFinite(rawScore) ||
+      rawScore < 0 ||
+      !Number.isSafeInteger(rawAgreement) ||
+      rawAgreement < 0
+    )
+      continue;
+    seen.add(number);
+    result.push({ number, score: rawScore, agreement: rawAgreement });
+  }
+  return result;
 }
 
 function asActual(value: unknown): { numbers: number[]; booster: number | null } {
@@ -266,6 +277,19 @@ function sortPredictions(rows: CustomerPrediction[]) {
       SESSIONS.indexOf(b.targetSession as (typeof SESSIONS)[number])
     );
   });
+}
+
+/** Picks the prediction for the exact scheduled draw; never relabels another session as today. */
+export function selectPredictionForTarget(
+  predictions: CustomerPrediction[],
+  target: { date: string; session: string },
+): CustomerPrediction | null {
+  return (
+    predictions.find(
+      (prediction) =>
+        prediction.targetDate === target.date && prediction.targetSession === target.session,
+    ) ?? null
+  );
 }
 
 function formulaLimit(role: string) {
@@ -355,7 +379,8 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         return prediction ? [prediction] : [];
       }),
     );
-    const prediction = customerPredictions[0] ?? null;
+    const nextReview = nextTarget();
+    const prediction = selectPredictionForTarget(customerPredictions, nextReview);
     const analysisRows = Array.isArray(analyses) ? analyses : [];
     const wheel = asCandidates(analysisRows[0]?.["top_numbers"]).map(
       ({ number, score, agreement }) => ({
@@ -390,7 +415,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
           duration: "01:56",
         },
       ],
-      nextReview: nextTarget(),
+      nextReview,
       featureVisibility: {
         ledger: false,
         strategyUpload: false,
@@ -493,6 +518,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
         actualBooster: actual.booster,
         matchedCount: countVisibleMatches(asNumberArray(row["pool"], 14), actual.numbers),
         outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
+        ranking: flattenRowsToRanking(row["rows"], 7),
         ensemble: analysis
           ? {
               candidates: asCandidates(analysis["top_numbers"]),
@@ -502,17 +528,16 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
           : null,
       };
     });
-    const latest = sessionRows[0] ?? null;
-    const latestAnalysis = latest
-      ? sessionRows.find(
-          (row) =>
-            row.targetDate === latest.targetDate && row.targetSession === latest.targetSession,
-        )?.ensemble
-      : null;
+    const nextReview = nextTarget();
+    const latest =
+      sessionRows.find(
+        (row) => row.targetDate === nextReview.date && row.targetSession === nextReview.session,
+      ) ?? null;
+    const latestAnalysis = latest?.ensemble ?? null;
     const candidates = latestAnalysis?.candidates ?? [];
     const prediction = latest;
     const pool = latest?.pool ?? [];
-    const ranking = latest ? flattenRowsToRanking(orderedPredictions[0]?.["rows"], 7) : [];
+    const ranking = latest?.ranking ?? [];
     return {
       formulaLimit: 5,
       noAdvertisements: true,
@@ -541,7 +566,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
             ? `${candidate.agreement} strategy signals agree on this candidate.`
             : "Candidate retained in the latest stored analysis snapshot.",
       })),
-      nextReview: nextTarget(),
+      nextReview,
     };
   });
 
