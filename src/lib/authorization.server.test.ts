@@ -7,6 +7,8 @@ type Row = Record<string, unknown> | null;
 function fakeSupabase(opts: {
   isAdministrator?: boolean;
   workspace?: Row;
+  bootstrapWorkspace?: { user_id: string; workspace_id: string; workspace_name: string };
+  bootstrapError?: string;
   entitlement?: Row;
   rpcError?: string;
   workspaceError?: string;
@@ -19,6 +21,19 @@ function fakeSupabase(opts: {
       if (fn === "get_my_access_status") {
         if (opts.accessStatusError) return { data: null, error: new Error(opts.accessStatusError) };
         return { data: opts.accessStatus ?? "active", error: null };
+      }
+      if (fn === "bootstrap_personal_account") {
+        if (opts.bootstrapError) return { data: null, error: new Error(opts.bootstrapError) };
+        return {
+          data: [
+            opts.bootstrapWorkspace ?? {
+              user_id: "user-new",
+              workspace_id: "ws-bootstrapped",
+              workspace_name: "My Lotto IQ workspace",
+            },
+          ],
+          error: null,
+        };
       }
       if (fn !== "is_administrator") throw new Error(`unexpected rpc: ${fn}`);
       if (opts.rpcError) return { data: null, error: new Error(opts.rpcError) };
@@ -63,11 +78,23 @@ describe("resolveAccessContext", () => {
     });
   });
 
-  it("resolves free role when no workspace has been bootstrapped yet", async () => {
+  it("bootstraps a missing personal workspace instead of returning an empty context", async () => {
     const supabase = fakeSupabase({ isAdministrator: false, workspace: null });
     const ctx = await resolveAccessContext(supabase, "user-new");
     expect(ctx.role).toBe("free");
-    expect(ctx.workspaceId).toBeNull();
+    expect(ctx.workspaceId).toBe("ws-bootstrapped");
+    expect(ctx.planCode).toBe("free");
+  });
+
+  it("fails closed when workspace bootstrap cannot return a workspace", async () => {
+    const supabase = fakeSupabase({
+      isAdministrator: false,
+      workspace: null,
+      bootstrapError: "rpc unavailable",
+    });
+    await expect(resolveAccessContext(supabase, "user-new")).rejects.toThrow(
+      /bootstrap personal workspace/,
+    );
   });
 
   it("resolves free role when entitlement plan_code is free", async () => {
