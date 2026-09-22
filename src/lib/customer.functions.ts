@@ -32,6 +32,7 @@ export type CustomerPrediction = {
   targetSession: string;
   generatedAt: string;
   banker: number | null;
+  bankers: number[];
   sevenBallRanking: number[];
   pool: number[];
   hotBalls: number[];
@@ -54,6 +55,7 @@ export type CustomerDashboard = {
   prediction: CustomerPrediction | null;
   predictions: CustomerPrediction[];
   wheel: CustomerWheel[];
+  analysisNumbers: number[];
   videos: CustomerVideo[];
   featureVisibility: {
     ledger: false;
@@ -226,6 +228,7 @@ function toCustomerPrediction(row: Row | null | undefined): CustomerPrediction |
     targetSession: String(row["target_session"]),
     generatedAt: String(row["generated_at"]),
     banker: typeof row["banker"] === "number" ? row["banker"] : null,
+    bankers: asNumberArray(row["bankers"], 7),
     sevenBallRanking: flattenRowsToRanking(row["rows"], 7),
     pool,
     hotBalls: pool.slice(0, 5),
@@ -271,12 +274,14 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         prediction: null,
         predictions: [],
         wheel: [],
+        analysisNumbers: [],
         videos: [],
         featureVisibility: {
           ledger: false,
           strategyUpload: false,
           ensemble: false,
-          statisticsWheel: true,
+          statisticsWheel:
+            accessContext.role === "premium" || accessContext.role === "administrator",
           candidateDescription: false,
         },
       };
@@ -295,7 +300,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
       db
         .from("predictions")
         .select(
-          "target_date,target_session,generated_at,banker,pool,rows,status,actual,matched_count,outcome,graded_at",
+          "target_date,target_session,generated_at,banker,bankers,pool,rows,status,actual,matched_count,outcome,graded_at",
         )
         .order("target_date", { ascending: false }),
       db
@@ -342,6 +347,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         agreement,
       }),
     );
+    const analysisNumbers = wheel.slice(0, 24).map((item) => item.number);
     return {
       role: accessContext.role,
       planCode: accessContext.planCode ?? "free",
@@ -356,7 +362,9 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
       draws: drawRows,
       prediction,
       predictions: customerPredictions,
-      wheel,
+      wheel:
+        accessContext.role === "premium" || accessContext.role === "administrator" ? wheel : [],
+      analysisNumbers,
       videos: [
         { title: "Reading your 14-ball pool", category: "Getting started", duration: "02:18" },
         { title: "How to interpret hot and cold balls", category: "Method", duration: "03:42" },
@@ -370,7 +378,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         ledger: false,
         strategyUpload: false,
         ensemble: false,
-        statisticsWheel: true,
+        statisticsWheel: accessContext.role === "premium" || accessContext.role === "administrator",
         candidateDescription: false,
       },
     };

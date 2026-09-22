@@ -177,8 +177,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               Your client view shows the live Brunch-to-Tea prediction schedule, verified winning
-              numbers, and the Lotto IQ analysis wheel. Full ensemble rationale remains
-              Premium-only.
+              numbers, a simple 24-number analysis, 14 recommended numbers, and 7 bankers. Scores,
+              agreement, and strategy statistics remain Premium-only.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -277,7 +277,10 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </div>
           </Panel>
         </div>
-        <WheelPanel wheel={data.wheel} />
+        <FreeAnalysisPanel
+          analysisNumbers={data.analysisNumbers}
+          bankers={prediction?.bankers ?? []}
+        />
         <PredictionHistory predictions={data.predictions} />
         <Panel
           title="Past draw results"
@@ -421,35 +424,48 @@ function SessionPredictionGrid({ predictions }: { predictions: CustomerPredictio
   );
 }
 
-function WheelPanel({ wheel }: { wheel: DashboardData["wheel"] }) {
+function FreeAnalysisPanel({
+  analysisNumbers,
+  bankers,
+}: {
+  analysisNumbers: number[];
+  bankers: number[];
+}) {
   return (
-    <Panel
-      title="Lotto IQ analysis wheel"
-      action={<span className="text-xs text-muted-foreground">Latest stored draw analysis</span>}
-    >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-center">
-        <img
-          src="/lotto-iq-dream-wheel.jpg"
-          alt="Lotto IQ UK 49s Dream Wheel"
-          className="mx-auto aspect-square w-full max-w-sm rounded-2xl border border-border/60 object-cover"
-        />
+    <Panel title="Lotto IQ analysis">
+      <p className="mb-4 text-sm text-muted-foreground">
+        Use these numbers to choose your own pairs. Scores and strategy details are available in
+        Premium.
+      </p>
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div>
-          <p className="mb-4 text-sm text-muted-foreground">
-            The wheel reflects the latest stored ensemble ranking. Scores and agreements are
-            analytical signals, not guarantees.
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            24 analysis numbers
           </p>
-          <div className="grid grid-cols-7 gap-2">
-            {wheel.map((item) => (
-              <Ball
-                key={item.number}
-                n={item.number}
-                className="!size-10 !text-xs"
-                title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-              />
+          <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-8">
+            {analysisNumbers.map((number, index) => (
+              <div key={number} className="flex flex-col items-center gap-1">
+                <Ball n={number} className="!size-10 !text-xs" />
+                <span className="text-[10px] text-muted-foreground">#{index + 1}</span>
+              </div>
             ))}
           </div>
-          {!wheel.length && (
-            <p className="text-sm text-muted-foreground">No wheel is available yet.</p>
+          {!analysisNumbers.length && (
+            <p className="mt-3 text-sm text-muted-foreground">Analysis is not published yet.</p>
+          )}
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">7 bankers</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Suggested anchors for building your own pairs.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {bankers.map((number) => (
+              <Ball key={number} n={number} variant="primary" />
+            ))}
+          </div>
+          {!bankers.length && (
+            <p className="mt-3 text-sm text-muted-foreground">Bankers are not published yet.</p>
           )}
         </div>
       </div>
