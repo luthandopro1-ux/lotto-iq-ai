@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAccessContext } from "@/lib/authorization.server";
 import { SESSIONS } from "@/lib/uk49";
+import { nextTarget } from "@/lib/sessions";
 
 const formulaInput = z.object({
   name: z.string().trim().min(2).max(120),
@@ -54,6 +55,7 @@ export type CustomerDashboard = {
   draws: CustomerDraw[];
   prediction: CustomerPrediction | null;
   predictions: CustomerPrediction[];
+  nextReview: { targetDate: string; targetSession: string };
   wheel: CustomerWheel[];
   analysisNumbers: number[];
   videos: CustomerVideo[];
@@ -264,6 +266,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
   .middleware([requireAccessContext])
   .handler(async ({ context }): Promise<CustomerDashboard> => {
     const { accessContext } = context;
+    const upcoming = nextTarget();
     if (!accessContext.workspaceId)
       return {
         role: accessContext.role,
@@ -273,6 +276,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
         draws: [],
         prediction: null,
         predictions: [],
+        nextReview: { targetDate: upcoming.date, targetSession: upcoming.session },
         wheel: [],
         analysisNumbers: [],
         videos: [],
@@ -362,6 +366,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
       draws: drawRows,
       prediction,
       predictions: customerPredictions,
+      nextReview: { targetDate: upcoming.date, targetSession: upcoming.session },
       wheel:
         accessContext.role === "premium" || accessContext.role === "administrator" ? wheel : [],
       analysisNumbers,
@@ -515,7 +520,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
         score: candidate.score,
         agreement: candidate.agreement,
       })),
-      currentDate: latest?.targetDate ?? null,
+      currentDate: nextTarget().date,
       sessions: sessionRows,
       candidateDescriptions: candidates.slice(0, 7).map((candidate) => ({
         number: candidate.number,
