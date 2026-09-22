@@ -6,6 +6,8 @@
 
 This document defines the minimum quality, security, and production-readiness requirements for every change. A pull request must satisfy the applicable requirements before it may be merged.
 
+This file complements [`RULES_OF_ENGAGEMENT.md`](./RULES_OF_ENGAGEMENT.md). `RULES_OF_ENGAGEMENT.md` governs agent operation, branch handling, human review, and crash-response procedure. This file governs software quality, security, testing, documentation, and release criteria. Neither document authorizes direct merging or overrides repository protection settings.
+
 ## 1. Architectural Scope
 
 The canonical Lotto IQ application is currently a **React 19 and TanStack Start TypeScript application** using TanStack Query, Supabase, PostgreSQL Row-Level Security, and Cloudflare-compatible server execution. The standards below distinguish requirements that apply to the current TypeScript stack from requirements that apply only if a Python service is introduced.
