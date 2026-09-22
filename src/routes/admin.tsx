@@ -27,7 +27,8 @@ import { listResearchReportsFn, triggerResearchNow } from "@/lib/research.functi
 import { buildPrediction } from "@/lib/predict";
 import { computeStats } from "@/lib/stats";
 import { buildEnsemble } from "@/lib/ensemble";
-import { currentSession, type Draw, type Strategy } from "@/lib/uk49";
+import { type Draw, type Strategy } from "@/lib/uk49";
+import { nextTarget } from "@/lib/sessions";
 import { getEarlyBirdStatus } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/admin")({
@@ -165,8 +166,9 @@ function AdminDashboard() {
   });
 
   const activeStrategies = strategies.filter((strategy) => strategy.enabled);
-  const liveTargetDate = new Date().toISOString().slice(0, 10);
-  const liveTargetSession = currentSession();
+  const liveTarget = nextTarget();
+  const liveTargetDate = liveTarget.date;
+  const liveTargetSession = liveTarget.session;
   const liveHistory = draws as Draw[];
   const livePrediction = useMemo(
     () =>

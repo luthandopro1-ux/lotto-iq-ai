@@ -10,8 +10,9 @@ import {
   recentIngestRuns,
   syncLatestDraws,
 } from "@/lib/ingest.functions";
+import { runDailyBoard } from "@/lib/predict.functions";
 import { SESSION_LABELS, type SessionKey } from "@/lib/uk49";
-import { RefreshCw, History } from "lucide-react";
+import { RefreshCw, History, Send } from "lucide-react";
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getUTCFullYear() - 1 - i);
 
@@ -20,6 +21,7 @@ export function SyncPanel() {
   const qc = useQueryClient();
   const sync = useServerFn(syncLatestDraws);
   const backfill = useServerFn(backfillYear);
+  const publishBoard = useServerFn(runDailyBoard);
   const coverageFn = useServerFn(drawCoverage);
   const runsFn = useServerFn(recentIngestRuns);
   const [year, setYear] = useState(YEARS[0]!);
@@ -53,6 +55,24 @@ export function SyncPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const runPublish = useMutation({
+    mutationFn: () => publishBoard({ data: {} }),
+    onSuccess: (result) => {
+      const next = result.nextTarget;
+      const published = result.board.filter((slot) => slot.prediction).length;
+      const warnings = result.syncErrors.length;
+      toast.success(
+        `Published ${published} prediction${published === 1 ? "" : "s"}; next target ${next.date} ${next.session}.${
+          warnings ? ` ${warnings} warning${warnings === 1 ? "" : "s"}.` : ""
+        }`,
+      );
+      refresh();
+      void qc.invalidateQueries({ queryKey: ["admin", "predictions"] });
+      void qc.invalidateQueries({ queryKey: ["customer", "premium-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const lastRun = runs.data?.[0];
 
   return (
@@ -61,6 +81,14 @@ export function SyncPanel() {
         <Button onClick={() => runSync.mutate()} disabled={runSync.isPending}>
           <RefreshCw className={`mr-2 size-4 ${runSync.isPending ? "animate-spin" : ""}`} />
           {runSync.isPending ? "Syncing…" : "Sync latest draws"}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => runPublish.mutate()}
+          disabled={runPublish.isPending}
+        >
+          <Send className={`mr-2 size-4 ${runPublish.isPending ? "animate-pulse" : ""}`} />
+          {runPublish.isPending ? "Publishing…" : "Publish today’s calculation"}
         </Button>
 
         <div className="flex items-center gap-2">
