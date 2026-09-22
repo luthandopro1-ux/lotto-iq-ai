@@ -225,11 +225,7 @@ function PremiumPage() {
           icon={Sparkles}
           label="14-ball pool"
           value={prediction?.pool.length ? String(prediction.pool.length) : "—"}
-          detail={
-            prediction
-              ? `${prediction.targetDate} · ${prediction.targetSession}`
-              : "No stored prediction"
-          }
+          detail={`Next review: ${premium.data?.nextReview.session ?? "—"} · ${premium.data?.nextReview.date ?? "—"}`}
         />
         <MetricCard
           icon={BarChart3}

@@ -201,11 +201,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
           <Stat
             icon={CalendarDays}
             label="Next review"
-            value={
-              prediction
-                ? `${prediction.targetSession} · ${prediction.targetDate}`
-                : "Awaiting prediction"
-            }
+            value={`${data.nextReview.session} · ${data.nextReview.date}`}
           />
           <Stat
             icon={Target}
