@@ -44,6 +44,7 @@ export type CustomerPrediction = {
   matchedCount: number;
   outcome: string | null;
   gradedAt: string | null;
+  smartPairs: Array<{ banker: number; pair: [number, number]; bonus: number }>;
 };
 export type CustomerWheel = { number: number; score: number; agreement: number };
 export type CustomerVideo = { title: string; category: string; duration: string };
@@ -226,6 +227,17 @@ function toCustomerPrediction(row: Row | null | undefined): CustomerPrediction |
   if (!row) return null;
   const actual = asActual(row["actual"]);
   const pool = asNumberArray(row["pool"], 14);
+  const smartPairs = Array.isArray(row["rows"])
+    ? row["rows"].slice(0, 10).flatMap((item) => {
+        if (!item || typeof item !== "object") return [];
+        const value = item as Record<string, unknown>;
+        const banker = asNumberArray([value["banker"]], 1)[0];
+        const pair = Array.isArray(value["pair"]) ? asNumberArray(value["pair"], 2) : [];
+        const bonus = asNumberArray([value["bonus"]], 1)[0];
+        if (banker === undefined || pair.length !== 2 || bonus === undefined) return [];
+        return [{ banker, pair: [pair[0]!, pair[1]!] as [number, number], bonus }];
+      })
+    : [];
   return {
     targetDate: String(row["target_date"]),
     targetSession: String(row["target_session"]),
@@ -242,6 +254,7 @@ function toCustomerPrediction(row: Row | null | undefined): CustomerPrediction |
     matchedCount: countVisibleMatches(pool, actual.numbers),
     outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
     gradedAt: typeof row["graded_at"] === "string" ? row["graded_at"] : null,
+    smartPairs,
   };
 }
 
@@ -366,8 +379,7 @@ export const getCustomerDashboard = createServerFn({ method: "GET" })
       draws: drawRows,
       prediction,
       predictions: customerPredictions,
-      wheel:
-        accessContext.role === "premium" || accessContext.role === "administrator" ? wheel : [],
+      wheel: wheel.slice(0, 10).map((item) => ({ number: item.number, score: 0, agreement: 0 })),
       analysisNumbers,
       videos: [
         { title: "Reading your 14-ball pool", category: "Getting started", duration: "02:18" },
