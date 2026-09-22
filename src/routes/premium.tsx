@@ -43,6 +43,7 @@ export const Route = createFileRoute("/premium")({
 });
 
 function PremiumPage() {
+  const liveRefreshMs = 30_000;
   const queryClient = useQueryClient();
   const [formulaName, setFormulaName] = useState("");
   const [formulaExpression, setFormulaExpression] = useState("");
@@ -65,11 +66,17 @@ function PremiumPage() {
     queryKey: ["premium-workspace"],
     queryFn: () => getPremiumWorkspace(),
     enabled: access.data?.role === "premium" || access.data?.role === "administrator",
+    refetchInterval: liveRefreshMs,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
   const dashboard = useQuery({
     queryKey: ["customer-dashboard"],
     queryFn: () => getCustomerDashboard(),
     enabled: access.data?.role === "premium" || access.data?.role === "administrator",
+    refetchInterval: liveRefreshMs,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
   const pricing = useQuery({ queryKey: ["pricing-context"], queryFn: () => getPricingContext() });
 
