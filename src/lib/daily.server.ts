@@ -432,7 +432,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
     const prediction = buildPrediction(
       strategies,
       { targetDate, targetSession: session, history },
-      { learning },
+      { learning, rows: 10 },
     );
     if (prediction.rows.length === 0) continue;
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   CalendarDays,
@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Snowflake,
   Target,
+  WandSparkles,
   Video,
 } from "lucide-react";
 import { AppShell, Ball, Panel } from "@/components/AppShell";
@@ -166,7 +167,8 @@ function AccessState({ title, detail }: { title: string; detail: string }) {
 }
 
 function DashboardContent({ data }: { data: DashboardData }) {
-  const prediction = data.prediction;
+  const prediction =
+    data.predictions.find((item) => item.targetDate === data.nextReview.date) ?? null;
   return (
     <AppShell>
       <div className="space-y-7">
@@ -214,7 +216,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
           />
           <Stat icon={CheckCircle2} label="Access boundary" value="Workspace isolated" />
         </div>
-        <SessionPredictionGrid predictions={data.predictions} />
+        <TodayPredictionPanel prediction={prediction} nextReview={data.nextReview} />
         <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
           <Panel
             title="14-ball pool"
@@ -279,11 +281,12 @@ function DashboardContent({ data }: { data: DashboardData }) {
         </div>
         <FreeAnalysisPanel
           analysisNumbers={data.analysisNumbers}
-          bankers={prediction?.bankers ?? []}
+          bankers={prediction?.bankers ?? data.prediction?.bankers ?? []}
+          wheel={data.wheel}
         />
         <PredictionHistory predictions={data.predictions} />
         <Panel
-          title="Past draw results"
+          title="Latest results by draw"
           action={
             <Link to="/account" className="text-xs text-primary hover:underline">
               Account settings
@@ -356,91 +359,146 @@ function DashboardContent({ data }: { data: DashboardData }) {
   );
 }
 
-const clientSessions = [
-  ["brunch", "Brunch"],
-  ["lunch", "Lunch"],
-  ["drivetime", "Drive Time"],
-  ["teatime", "Tea Time"],
-] as const;
-
-function SessionPredictionGrid({ predictions }: { predictions: CustomerPrediction[] }) {
-  const currentDate = predictions[0]?.targetDate;
-  const current = predictions.filter((prediction) => prediction.targetDate === currentDate);
+function TodayPredictionPanel({
+  prediction,
+  nextReview,
+}: {
+  prediction: CustomerPrediction | null;
+  nextReview: { date: string; session: string };
+}) {
+  const [selected, setSelected] = useState<number[]>([]);
+  const pool = prediction?.pool ?? [];
+  const toggle = (number: number) =>
+    setSelected((current) =>
+      current.includes(number)
+        ? current.filter((item) => item !== number)
+        : current.length < 2
+          ? [...current, number]
+          : [current[1]!, number],
+    );
   return (
-    <Panel
-      title="Live draw predictions"
-      action={<span className="text-xs text-muted-foreground">Brunch → Lunch → Drive → Tea</span>}
-    >
-      <p className="mb-4 text-sm text-muted-foreground">
-        Brunch and Lunch share one locked prediction. Drive Time and Tea Time are refreshed for
-        their own draw windows.
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {clientSessions.map(([key, label]) => {
-          const prediction = current.find((item) => item.targetSession === key);
-          const matchedNumbers = new Set(prediction?.actualNumbers ?? []);
-          return (
-            <div key={key} className="rounded-xl border border-border/60 bg-background/20 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold">{label}</p>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {prediction?.status ?? "waiting"}
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {prediction?.pool.map((number) => (
-                  <Ball
-                    key={number}
-                    n={number}
-                    variant={matchedNumbers.has(number) ? "matched" : "default"}
-                  />
-                )) ?? <span className="text-xs text-muted-foreground">Not published yet.</span>}
-              </div>
-              {prediction?.actualNumbers.length ? (
-                <div className="mt-4 border-t border-border/60 pt-3">
-                  <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-                    <Trophy className="size-3" /> Winning numbers
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {prediction.actualNumbers.map((number) => (
-                      <Ball
-                        key={number}
-                        n={number}
-                        variant={prediction.pool.includes(number) ? "matched" : "accent"}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    {prediction.matchedCount} predicted match
-                    {prediction.matchedCount === 1 ? "" : "es"}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+    <section className="rounded-3xl border border-primary/20 bg-primary/[0.04] p-5 shadow-sm sm:p-7">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Today’s prediction
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-bold">
+            {nextReview.date} · {nextReview.session}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            One focused brief for the next draw. Graded results stay in history below.
+          </p>
+        </div>
+        <span className="rounded-full border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary">
+          {prediction?.status ?? "Not published"}
+        </span>
       </div>
-    </Panel>
+      {!prediction ? (
+        <p className="mt-6 rounded-2xl border border-border/60 bg-background/30 p-5 text-sm text-muted-foreground">
+          The daily prediction has not been published yet.
+        </p>
+      ) : (
+        <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
+          <div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                7-number ranking
+              </p>
+              <span className="text-xs text-muted-foreground">Platform signal order</span>
+            </div>
+            <div className="mt-3 grid grid-cols-7 gap-2">
+              {prediction.sevenBallRanking.map((number, index) => (
+                <div key={`${number}-${index}`} className="text-center">
+                  <Ball
+                    n={number}
+                    variant={index === 0 ? "primary" : "default"}
+                    className="mx-auto !size-10 !text-xs"
+                  />
+                  <span className="mt-1 block text-[10px] text-muted-foreground">#{index + 1}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-primary">
+              Make your own pair
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Select any two numbers from the 14-ball pool.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {pool.map((number) => (
+                <button
+                  key={number}
+                  type="button"
+                  onClick={() => toggle(number)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selected.includes(number) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background/30 hover:border-primary/60"}`}
+                >
+                  {String(number).padStart(2, "0")}
+                </button>
+              ))}
+            </div>
+            {selected.length === 2 && (
+              <p className="mt-3 text-sm font-semibold text-primary">
+                Your pair: {selected.map((number) => String(number).padStart(2, "0")).join(" + ")}
+              </p>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                10 smart pairs + bonus
+              </p>
+              <WandSparkles className="size-4 text-primary" />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Generated from the highest-rated platform ensemble. Strategy definitions remain
+              private.
+            </p>
+            <div className="mt-3 space-y-2">
+              {prediction.smartPairs.map((row, index) => (
+                <div
+                  key={`${row.banker}-${row.bonus}-${index}`}
+                  className="flex items-center justify-between rounded-xl border border-border/60 bg-background/30 px-3 py-2 text-xs"
+                >
+                  <span className="text-muted-foreground">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-semibold">
+                    {row.pair.map((number) => String(number).padStart(2, "0")).join(" + ")}
+                  </span>
+                  <span className="text-primary">B {String(row.bonus).padStart(2, "0")}</span>
+                </div>
+              ))}
+              {!prediction.smartPairs.length && (
+                <p className="text-sm text-muted-foreground">Smart pairs are not published yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
 function FreeAnalysisPanel({
   analysisNumbers,
   bankers,
+  wheel,
 }: {
   analysisNumbers: number[];
   bankers: number[];
+  wheel: CustomerDashboard["wheel"];
 }) {
   return (
-    <Panel title="Lotto IQ analysis">
+    <Panel title="24-number analysis and wheel">
       <p className="mb-4 text-sm text-muted-foreground">
-        Use these numbers to choose your own pairs. Scores and strategy details are available in
-        Premium.
+        A clean view of the platform signal structure. Use the 14-ball pool above to build your own
+        pair.
       </p>
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-            24 analysis numbers
+            Total 24 numbers
           </p>
           <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-8">
             {analysisNumbers.map((number, index) => (
@@ -455,18 +513,37 @@ function FreeAnalysisPanel({
           )}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">7 bankers</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Wheel structure
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Suggested anchors for building your own pairs.
+            Top wheel positions available in your plan.
+          </p>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {wheel.slice(0, 10).map((item, index) => (
+              <div key={item.number} className="text-center">
+                <Ball
+                  n={item.number}
+                  variant={index < 3 ? "primary" : "default"}
+                  className="mx-auto !size-9 !text-xs"
+                />
+                <span className="mt-1 block text-[10px] text-muted-foreground">W{index + 1}</span>
+              </div>
+            ))}
+          </div>
+          {!wheel.length && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              The wheel is not published for this workspace yet.
+            </p>
+          )}
+          <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-primary">
+            7 platform bankers
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {bankers.map((number) => (
               <Ball key={number} n={number} variant="primary" />
             ))}
           </div>
-          {!bankers.length && (
-            <p className="mt-3 text-sm text-muted-foreground">Bankers are not published yet.</p>
-          )}
         </div>
       </div>
     </Panel>
@@ -475,9 +552,10 @@ function FreeAnalysisPanel({
 
 function PredictionHistory({ predictions }: { predictions: CustomerPrediction[] }) {
   return (
-    <Panel title="Prediction and winning-number record">
+    <Panel title="Graded history by draw">
       <p className="mb-4 text-sm text-muted-foreground">
-        Every stored prediction remains visible here after its draw is verified and graded.
+        History is kept below today’s brief. Each draw shows the prediction, winning numbers, and
+        exactly which numbers matched.
       </p>
       <div className="space-y-3">
         {predictions.map((prediction) => {
@@ -532,6 +610,14 @@ function PredictionHistory({ predictions }: { predictions: CustomerPrediction[] 
                   {prediction.actualNumbers.length ? (
                     <p className="mt-2 text-xs text-muted-foreground">
                       {prediction.matchedCount} match{prediction.matchedCount === 1 ? "" : "es"}
+                    </p>
+                  ) : null}
+                  {prediction.actualNumbers.length ? (
+                    <p className="mt-1 text-xs text-emerald-300">
+                      Matched:{" "}
+                      {prediction.actualNumbers
+                        .filter((number) => prediction.pool.includes(number))
+                        .join(", ") || "none"}
                     </p>
                   ) : null}
                 </div>
