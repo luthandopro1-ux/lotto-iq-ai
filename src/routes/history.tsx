@@ -135,7 +135,11 @@ function HistoryPage() {
                     {new Date(r.locked_at).toLocaleString("en-GB")}
                   </td>
                   <td className="py-2 pr-3">
-                    {r.banker != null ? <Ball n={r.banker} size="sm" /> : "—"}
+                    {r.banker != null ? (
+                      <Ball n={r.banker} className="!size-7 !text-[10px]" />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="py-2 pr-3 text-xs">
                     {r.rows
