@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Database,
+  Facebook,
   FlaskConical,
   Gauge,
   Layers3,
@@ -515,6 +516,22 @@ function LandingPage() {
               Join the beta <ArrowRight className="size-4" />
             </Link>
           </div>
+          <div className="mt-6 flex flex-col justify-between gap-4 border-t border-primary/20 pt-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold">Join the Lotto IQ community</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Follow product updates, beta news, and launch announcements on Facebook.
+              </p>
+            </div>
+            <a
+              href="https://facebook.com/Lottoiqapp"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-background/30 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10"
+            >
+              <Facebook className="size-4" /> Join the community
+            </a>
+          </div>
         </div>
       </section>
 
@@ -602,6 +619,14 @@ function LandingPage() {
             <Link to="/account" className="hover:text-foreground">
               Account
             </Link>
+            <a
+              href="https://facebook.com/Lottoiqapp"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-foreground"
+            >
+              <Facebook className="size-3.5" /> Community
+            </a>
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-2 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
