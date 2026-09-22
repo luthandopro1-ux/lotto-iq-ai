@@ -97,6 +97,7 @@ export type PremiumWorkspace = {
     actualNumbers: number[];
     actualBooster: number | null;
     matchedCount: number;
+    ranking: number[];
     outcome: string | null;
     ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
   }>;
@@ -492,6 +493,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
         actualNumbers: actual.numbers,
         actualBooster: actual.booster,
         matchedCount: countVisibleMatches(asNumberArray(row["pool"], 14), actual.numbers),
+        ranking: flattenRowsToRanking(row["rows"], 7),
         outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
         ensemble: analysis
           ? {

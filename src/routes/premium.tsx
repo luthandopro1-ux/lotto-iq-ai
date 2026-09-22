@@ -123,7 +123,20 @@ function PremiumPage() {
       </PageShell>
     );
   const workspace = premium.data;
-  const prediction = workspace?.prediction;
+  const todaySession = workspace?.sessions.find(
+    (session) =>
+      session.targetDate === workspace.nextReview.date &&
+      session.targetSession === workspace.nextReview.session,
+  );
+  const prediction = todaySession
+    ? {
+        targetDate: todaySession.targetDate,
+        targetSession: todaySession.targetSession,
+        status: todaySession.status,
+        pool: todaySession.pool,
+        ranking: todaySession.ranking,
+      }
+    : null;
 
   return (
     <PageShell>
@@ -146,9 +159,10 @@ function PremiumPage() {
         </div>
       </header>
 
-      <PremiumSessionGrid
-        sessions={workspace?.sessions ?? []}
-        currentDate={workspace?.currentDate}
+      <PremiumTodayBrief
+        prediction={prediction}
+        candidates={workspace?.ensemble?.candidates ?? []}
+        nextReview={workspace?.nextReview ?? { date: "—", session: "—" }}
       />
 
       <section className="mb-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
@@ -172,16 +186,14 @@ function PremiumPage() {
           </p>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {PREMIUM_PLANS.map((plan, index) => (
+          {PREMIUM_PLANS.filter((plan) => plan.code === "monthly").map((plan) => (
             <div
               key={plan.code}
-              className={`relative rounded-2xl border p-5 ${index === 1 ? "border-primary/45 bg-primary/10" : "border-border/60 bg-background/20"}`}
+              className="relative rounded-2xl border border-primary/45 bg-primary/10 p-5"
             >
-              {index === 1 && (
-                <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-                  Popular
-                </span>
-              )}
+              <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
+                Monthly access
+              </span>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {plan.label}
               </p>
@@ -245,12 +257,12 @@ function PremiumPage() {
         <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
           <SectionHeading
             icon={Sparkles}
-            title="Ensemble analysis"
-            subtitle="The latest stored snapshot, projected into Premium-safe fields."
+            title="Full ensemble analysis scoreboard"
+            subtitle="The original Lotto IQ ensemble, including every stored candidate rating and agreement signal."
           />
           {workspace?.ensemble ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {workspace.ensemble.candidates.slice(0, 8).map((candidate, index) => (
+              {workspace.ensemble.candidates.map((candidate, index) => (
                 <div
                   key={candidate.number}
                   className={`rounded-2xl border p-4 ${index === 0 ? "border-primary/40 bg-primary/10" : "border-border/60 bg-background/20"}`}
@@ -290,12 +302,15 @@ function PremiumPage() {
             />
             <div className="grid grid-cols-7 gap-2">
               {(workspace?.wheel ?? []).map((item) => (
-                <Ball
-                  key={item.number}
-                  n={item.number}
-                  className="!size-10 !text-sm"
-                  title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
-                />
+                <div key={item.number} className="text-center">
+                  <Ball
+                    n={item.number}
+                    className="mx-auto !size-10 !text-sm"
+                    title={`Score ${item.score.toFixed(2)} · agreement ${item.agreement}`}
+                  />
+                  <p className="mt-1 text-[10px] text-muted-foreground">{item.score.toFixed(2)}</p>
+                  <p className="text-[10px] text-primary">{item.agreement} agree</p>
+                </div>
               ))}
             </div>
           </div>
@@ -308,6 +323,31 @@ function PremiumPage() {
           </div>
         </section>
       </div>
+
+      <section className="mt-6 rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
+        <SectionHeading
+          icon={BarChart3}
+          title="Analysis scoring"
+          subtitle="A transparent summary of how the current Premium signal is ranked."
+        />
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <ScoreCard
+            label="Top composite score"
+            value={workspace?.ensemble?.candidates[0]?.score.toFixed(2) ?? "—"}
+            detail="Highest-rated ensemble candidate"
+          />
+          <ScoreCard
+            label="Strategy signals"
+            value={String(workspace?.ensemble?.strategyCount ?? 0)}
+            detail="Original ensemble inputs"
+          />
+          <ScoreCard
+            label="Wheel positions"
+            value={String(workspace?.wheel.length ?? 0)}
+            detail="Ranked positions with score and agreement"
+          />
+        </div>
+      </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
         <section className="rounded-3xl border border-border/70 bg-card/30 p-5 sm:p-7">
@@ -403,6 +443,11 @@ function PremiumPage() {
         </section>
       </div>
 
+      <PremiumSessionGrid
+        sessions={workspace?.sessions ?? []}
+        currentDate={workspace?.currentDate}
+      />
+
       <div className="mt-6 rounded-2xl border border-border/60 bg-background/20 p-4 text-xs leading-5 text-muted-foreground">
         <strong className="text-foreground">Visibility boundary:</strong> Premium access exposes the
         projected ensemble, wheel, ranking, and banker fields only. It does not expose global
@@ -413,6 +458,88 @@ function PremiumPage() {
 }
 
 type PremiumSession = PremiumWorkspace["sessions"][number];
+
+function PremiumTodayBrief({
+  prediction,
+  candidates,
+  nextReview,
+}: {
+  prediction: {
+    targetDate: string;
+    targetSession: string;
+    status: string;
+    pool: number[];
+    ranking: number[];
+  } | null;
+  candidates: NonNullable<PremiumWorkspace["ensemble"]>["candidates"];
+  nextReview: { date: string; session: string };
+}) {
+  const topThree = candidates.slice(0, 3);
+  return (
+    <section className="mb-6 rounded-3xl border border-primary/25 bg-primary/10 p-5 sm:p-7">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Today’s Premium prediction
+          </p>
+          <h2 className="mt-2 font-display text-3xl font-bold">
+            {nextReview.date} · {nextReview.session}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Your first view is always the current draw. Historical sessions and grading remain below
+            the live brief.
+          </p>
+        </div>
+        <span className="rounded-full border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary">
+          {prediction?.status ?? "Not published"}
+        </span>
+      </div>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
+        <div className="rounded-2xl border border-border/60 bg-background/25 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            3 highly rated balls
+          </p>
+          <div className="mt-4 flex gap-3">
+            {topThree.map((candidate, index) => (
+              <div key={candidate.number} className="text-center">
+                <Ball
+                  n={candidate.number}
+                  variant={index === 0 ? "primary" : "default"}
+                  className="!size-14 !text-base"
+                />
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  #{index + 1} · {candidate.score.toFixed(2)}
+                </p>
+              </div>
+            ))}
+            {!topThree.length && (
+              <p className="text-sm text-muted-foreground">No rated balls published yet.</p>
+            )}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border/60 bg-background/25 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            5 ranking balls
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {(prediction?.ranking ?? []).slice(0, 5).map((number, index) => (
+              <div
+                key={`${number}-${index}`}
+                className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2"
+              >
+                <span className="text-xs text-muted-foreground">{index + 1}</span>
+                <Ball n={number} className="!size-9 !text-xs" />
+              </div>
+            ))}
+            {!prediction?.ranking.length && (
+              <p className="text-sm text-muted-foreground">Ranking is not published yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function PremiumSessionGrid({
   sessions,
@@ -661,6 +788,15 @@ function MetricCard({
       <p className="mt-4 font-display text-2xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-2 text-[11px] text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+function ScoreCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background/20 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-primary">{label}</p>
+      <p className="mt-3 font-display text-2xl font-bold">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }
