@@ -83,6 +83,8 @@ export type PremiumWorkspace = {
     status: string;
     pool: number[];
     ranking: number[];
+    rankedBalls: PremiumCandidate[];
+    bankers: PremiumCandidate[];
   } | null;
   ensemble: { candidates: PremiumCandidate[]; strategyCount: number; createdAt: string } | null;
   wheel: Array<{ number: number; score: number; agreement: number }>;
@@ -92,7 +94,9 @@ export type PremiumWorkspace = {
     targetSession: string;
     status: string;
     banker: number | null;
+    bankers: PremiumCandidate[];
     pool: number[];
+    rankedBalls: PremiumCandidate[];
     actualNumbers: number[];
     actualBooster: number | null;
     matchedCount: number;
@@ -208,9 +212,11 @@ export function asCandidates(value: unknown): PremiumCandidate[] {
   for (const item of value) {
     if (!item || typeof item !== "object") continue;
     const row = item as Record<string, unknown>;
-    const number = Number(row["number"]);
+    const number = Number(row["number"] ?? row["n"]);
     const rawScore = Number(row["score"] ?? 0);
-    const rawAgreement = Number(row["agreement"] ?? 0);
+    const rawAgreement = Number(
+      row["agreement"] ?? (Array.isArray(row["strategies"]) ? row["strategies"].length : 0),
+    );
     if (
       !Number.isInteger(number) ||
       number < 1 ||
@@ -224,6 +230,31 @@ export function asCandidates(value: unknown): PremiumCandidate[] {
       continue;
     seen.add(number);
     result.push({ number, score: rawScore, agreement: rawAgreement });
+  }
+  return result;
+}
+
+/** Converts stored prediction rows into a scored, de-duplicated client ranking. */
+export function rankedCandidatesFromRows(value: unknown, max: number): PremiumCandidate[] {
+  if (!Array.isArray(value)) return [];
+  const result: PremiumCandidate[] = [];
+  const seen = new Set<number>();
+  for (const item of value) {
+    if (result.length >= max || !item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const candidates = [
+      row["banker"],
+      ...(Array.isArray(row["pair"]) ? row["pair"] : []),
+      row["bonus"],
+    ];
+    for (const candidate of candidates) {
+      if (result.length >= max || !candidate || typeof candidate !== "object") continue;
+      const parsed = asCandidates([candidate])[0];
+      if (parsed && !seen.has(parsed.number)) {
+        seen.add(parsed.number);
+        result.push(parsed);
+      }
+    }
   }
   return result;
 }
@@ -480,7 +511,7 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
       db
         .from("predictions")
         .select(
-          "target_date,target_session,status,banker,pool,rows,actual,matched_count,outcome,generated_at",
+          "target_date,target_session,status,banker,bankers,pool,rows,actual,matched_count,outcome,generated_at",
         )
         .order("target_date", { ascending: false }),
       db
@@ -508,17 +539,21 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
           String(candidate["target_session"]) === String(row["target_session"]),
       );
       const actual = asActual(row["actual"]);
+      const bankers = asCandidates(row["bankers"]);
+      const rankedBalls = rankedCandidatesFromRows(row["rows"], 7);
       return {
         targetDate: String(row["target_date"]),
         targetSession: String(row["target_session"]),
         status: String(row["status"] ?? "pending"),
         banker: typeof row["banker"] === "number" ? row["banker"] : null,
+        bankers,
         pool: asNumberArray(row["pool"], 14),
+        rankedBalls,
         actualNumbers: actual.numbers,
         actualBooster: actual.booster,
         matchedCount: countVisibleMatches(asNumberArray(row["pool"], 14), actual.numbers),
         outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
-        ranking: flattenRowsToRanking(row["rows"], 7),
+        ranking: rankedBalls.map((candidate) => candidate.number),
         ensemble: analysis
           ? {
               candidates: asCandidates(analysis["top_numbers"]),
@@ -549,6 +584,8 @@ export const getPremiumWorkspace = createServerFn({ method: "GET" })
             status: prediction.status,
             pool,
             ranking,
+            rankedBalls: prediction.rankedBalls,
+            bankers: prediction.bankers,
           }
         : null,
       ensemble: latestAnalysis ?? null,
