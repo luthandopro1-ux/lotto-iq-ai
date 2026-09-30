@@ -15,12 +15,12 @@ import {
 import {
   SESSIONS,
   SESSION_LABELS,
-  currentSession,
   drawNumbers,
   type Draw,
   type SessionKey,
   type Strategy,
 } from "@/lib/uk49";
+import { nextTarget } from "@/lib/sessions";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -56,8 +56,9 @@ function Tag({ c }: { c: Classification }) {
 }
 
 function EnsemblePage() {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [session, setSession] = useState<SessionKey>(currentSession());
+  const initialTarget = useMemo(() => nextTarget(), []);
+  const [date, setDate] = useState(initialTarget.date);
+  const [session, setSession] = useState<SessionKey>(initialTarget.session);
   const [weight, setWeight] = useState(0.7);
 
   const { data: draws = [], isLoading } = useQuery({

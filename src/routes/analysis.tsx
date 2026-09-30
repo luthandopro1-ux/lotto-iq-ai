@@ -11,12 +11,12 @@ import { getAnalysisSnapshot, refreshAnalysisSnapshot } from "@/lib/analysis.fun
 import {
   SESSIONS,
   SESSION_LABELS,
-  currentSession,
   drawNumbers,
   type Draw,
   type SessionKey,
   type Strategy,
 } from "@/lib/uk49";
+import { nextTarget } from "@/lib/sessions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,8 +46,9 @@ function AnalysisPage() {
   const getSnapshotFn = useServerFn(getAnalysisSnapshot);
   const refreshSnapshotFn = useServerFn(refreshAnalysisSnapshot);
   const queryClient = useQueryClient();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [session, setSession] = useState<SessionKey>(currentSession());
+  const initialTarget = useMemo(() => nextTarget(), []);
+  const [date, setDate] = useState(initialTarget.date);
+  const [session, setSession] = useState<SessionKey>(initialTarget.session);
 
   const snapshotKey = ["analysis-snapshot", date, session];
   const { data: snapshot, isLoading: snapshotLoading } = useQuery({

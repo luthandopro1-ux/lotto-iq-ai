@@ -87,7 +87,6 @@ function classify(
     if (formulaScore >= 0.7 && statScore < 0.25) return "CONFLICT";
     return "FORMULA ONLY";
   }
-  if (statRank <= CONFIRM_RANK) return "STATISTICAL ONLY";
   return "STATISTICAL ONLY";
 }
 

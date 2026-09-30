@@ -236,7 +236,7 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       draw,
     );
     const bankerHit = grading.rows.some((r) => r.bankerHit);
-    const { data: updated } = await db
+    const { data: updated, error: gradeError } = await db
       .from("predictions")
       .update({
         status: "graded",
@@ -251,7 +251,13 @@ export async function runDailyBoard(data: DailyBoardOptions = {}) {
       .eq("id", p.id)
       .select("*")
       .single();
-    if (updated) Object.assign(p, updated);
+    if (gradeError || !updated) {
+      syncErrors.push(
+        `Prediction ${p.id} grading not saved: ${gradeError?.message ?? "no row returned"}`,
+      );
+      continue;
+    }
+    Object.assign(p, updated);
     gradedNow += 1;
 
     try {
