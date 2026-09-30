@@ -24,14 +24,6 @@ export function isDrawBefore(
   return compareDrawSlots(a, b) < 0;
 }
 
-/** Approximate UK49 draw times (local UK), used for "current session". */
-export const SESSION_HOURS: Record<SessionKey, number> = {
-  brunch: 10,
-  lunch: 12,
-  drivetime: 17,
-  teatime: 22,
-};
-
 export interface Draw {
   id: string;
   draw_date: string;
@@ -59,14 +51,6 @@ export interface Strategy {
 }
 
 export const drawNumbers = (d: Draw) => [d.n1, d.n2, d.n3, d.n4, d.n5, d.n6];
-
-export function currentSession(now = new Date()): SessionKey {
-  const h = now.getHours();
-  if (h < 11) return "brunch";
-  if (h < 14) return "lunch";
-  if (h < 19) return "drivetime";
-  return "teatime";
-}
 
 /** Fold any integer into the UK49 range 1-49. */
 export function normalize(n: number): number | null {

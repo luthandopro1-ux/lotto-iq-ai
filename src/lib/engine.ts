@@ -60,8 +60,8 @@ register({
   run: (ctx) =>
     seedNumbers(ctx).map((n) =>
       out(
-        n * ctx.date.getDate(),
-        `${n} × ${ctx.date.getDate()} (date) = ${n * ctx.date.getDate()}`,
+        n * ctx.date.getUTCDate(),
+        `${n} × ${ctx.date.getUTCDate()} (date) = ${n * ctx.date.getUTCDate()}`,
       ),
     ),
 });
@@ -73,7 +73,7 @@ register({
   category: "date",
   run: (ctx) => {
     const k = Number(ctx.params["multiplier"] ?? 27) || 27;
-    const day = ctx.date.getDate();
+    const day = ctx.date.getUTCDate();
     const base = day * k;
     return [
       out(base, `${day} (date) × ${k} = ${base}`),
@@ -89,7 +89,7 @@ register({
   explain: "Subtracts the day of month from 50, then blends with the last draw.",
   category: "date",
   run: (ctx) => {
-    const day = ctx.date.getDate();
+    const day = ctx.date.getUTCDate();
     const base = 50 - day;
     return [
       out(base, `50 − ${day} (date) = ${base}`),
@@ -107,7 +107,7 @@ register({
   category: "date",
   run: (ctx) => {
     const t = SESSIONS.indexOf(ctx.session) + 1;
-    const day = ctx.date.getDate();
+    const day = ctx.date.getUTCDate();
     const base = day * t * 49;
     return [
       out(base, `${day} × ${t} (session) × 49 = ${base}`),
@@ -348,7 +348,7 @@ function buildSeed(seed: BuilderSeed, ctx: RuleContext): RuleOutput[] {
         .slice(0, 3)
         .flatMap((d, i) => drawNumbers(d).map((n) => out(n, `${n} (draw −${i + 1})`)));
     case "date":
-      return [out(ctx.date.getDate(), `${ctx.date.getDate()} (day of month)`)];
+      return [out(ctx.date.getUTCDate(), `${ctx.date.getUTCDate()} (day of month)`)];
     case "booster": {
       const b = draw(0)?.booster;
       return b ? [out(b, `${b} (booster)`)] : [];
@@ -367,7 +367,7 @@ function buildSeed(seed: BuilderSeed, ctx: RuleContext): RuleOutput[] {
 
 function applyOp(item: RuleOutput, step: BuilderOp, ctx: RuleContext): RuleOutput[] {
   const v = Number(step.value ?? 0);
-  const day = ctx.date.getDate();
+  const day = ctx.date.getUTCDate();
   const make = (value: number, label: string) => out(value, `${item.trace} → ${label}`);
 
   switch (step.op) {
@@ -522,7 +522,8 @@ export function runAnalysis(
     numbers.sort((a, b) => a - b);
     perStrategy.push({ strategy: s, numbers, traces, ...(error ? { error } : {}) });
 
-    const weight = Number(s.weight) || 1;
+    const parsedWeight = Number(s.weight);
+    const weight = Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : 1;
     for (const n of numbers) {
       const entry = scores.get(n) ?? { number: n, score: 0, agreement: 0, hits: [] };
       entry.score += weight;
