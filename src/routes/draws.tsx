@@ -6,14 +6,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Ball, Panel } from "@/components/AppShell";
 import { SyncPanel } from "@/components/SyncPanel";
-import { smartImportDraws, type ParsedDraw } from "@/lib/ai.functions";
 import { saveDraws, deleteDraw } from "@/lib/draws.functions";
 import { SESSION_LABELS, SESSIONS, drawNumbers, type Draw, type SessionKey } from "@/lib/uk49";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/draws")({
   head: () => ({
@@ -22,12 +20,12 @@ export const Route = createFileRoute("/draws")({
       {
         name: "description",
         content:
-          "Import UK49 results in any format with the AI importer, or add draws manually, and manage your historical database.",
+          "Add UK49 draws manually, review automatic syncs, and manage your historical database.",
       },
       { property: "og:title", content: "Historical UK49 Draw Database" },
       {
         property: "og:description",
-        content: "AI-assisted import of UK49 Brunch, Lunch, Drive Time and Tea Time results.",
+        content: "Historical UK49 Brunch, Lunch, Drive Time and Tea Time results.",
       },
     ],
   }),
@@ -38,12 +36,8 @@ const empty = { draw_date: "", session: "lunch" as SessionKey, nums: "", booster
 
 function DrawsPage() {
   const qc = useQueryClient();
-  const importFn = useServerFn(smartImportDraws);
   const saveFn = useServerFn(saveDraws);
   const deleteFn = useServerFn(deleteDraw);
-  const [raw, setRaw] = useState("");
-  const [preview, setPreview] = useState<ParsedDraw[]>([]);
-  const [notes, setNotes] = useState("");
   const [manual, setManual] = useState(empty);
 
   const { data: draws = [] } = useQuery({
@@ -57,43 +51,6 @@ function DrawsPage() {
       if (error) throw error;
       return data as Draw[];
     },
-  });
-
-  const parse = useMutation({
-    mutationFn: async () => importFn({ data: { raw } }),
-    onSuccess: (res) => {
-      setPreview(res.draws);
-      setNotes(res.notes);
-      if (res.draws.length === 0)
-        toast.error("The AI could not find any valid draws in that text.");
-      else
-        toast.success(`${res.draws.length} draw${res.draws.length === 1 ? "" : "s"} recognised.`);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const save = useMutation({
-    mutationFn: async (rows: ParsedDraw[]) => {
-      await saveFn({
-        data: {
-          draws: rows.map((d) => ({
-            draw_date: d.draw_date,
-            session: d.session,
-            numbers: d.numbers,
-            booster: d.booster ?? null,
-            source: "ai-import",
-          })),
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Draws saved to your historical database.");
-      setPreview([]);
-      setRaw("");
-      setNotes("");
-      qc.invalidateQueries({ queryKey: ["draws"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const addManual = useMutation({
@@ -134,87 +91,16 @@ function DrawsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["draws"] }),
   });
 
-  const onFile = async (file: File) => {
-    const text = await file.text();
-    setRaw(text.slice(0, 200000));
-    toast.success(`Loaded ${file.name}. Press "Read with AI".`);
-  };
-
   return (
     <AppShell>
       <h1 className="mb-1 text-2xl font-bold">Historical database</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        The AI importer reads any format — CSV, pasted tables, messages, PDF text — and files every
-        draw into Brunch, Lunch, Drive Time and Tea Time.
+        Draws sync automatically. Add a missing draw manually or remove a wrong one.
       </p>
 
       <SyncPanel />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="AI smart import" className="lg:col-span-2">
-          <Textarea
-            value={raw}
-            onChange={(e) => setRaw(e.target.value)}
-            rows={9}
-            placeholder={`Paste anything, e.g.\n06/08/2026 Lunchtime  4 12 19 27 33 41  B: 8\n6 Aug 26 teatime — 3,9,14,22,38,44 (booster 17)`}
-            className="resize-y font-mono text-xs"
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() => parse.mutate()}
-              disabled={raw.trim().length < 3 || parse.isPending}
-            >
-              <Wand2 className="mr-2 size-4" />
-              {parse.isPending ? "Reading…" : "Read with AI"}
-            </Button>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary/60">
-              <Upload className="size-4" />
-              Upload file
-              <input
-                type="file"
-                accept=".csv,.txt,.tsv,text/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void onFile(f);
-                }}
-              />
-            </label>
-            {notes && <span className="text-xs text-muted-foreground">{notes}</span>}
-          </div>
-
-          {preview.length > 0 && (
-            <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold">
-                  <Sparkles className="mr-1.5 inline size-4 text-primary" />
-                  {preview.length} draw{preview.length === 1 ? "" : "s"} ready to import
-                </p>
-                <Button size="sm" onClick={() => save.mutate(preview)} disabled={save.isPending}>
-                  {save.isPending ? "Saving…" : "Save all"}
-                </Button>
-              </div>
-              <div className="max-h-72 space-y-2 overflow-y-auto">
-                {preview.map((d, i) => (
-                  <div
-                    key={`${d.draw_date}-${d.session}-${i}`}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 p-2 text-xs"
-                  >
-                    <span className="w-24 font-mono">{d.draw_date}</span>
-                    <span className="w-20 text-primary">{SESSION_LABELS[d.session]}</span>
-                    {d.numbers.map((n, j) => (
-                      <Ball key={j} n={n} className="size-7 text-[11px]" />
-                    ))}
-                    {d.booster != null && (
-                      <Ball n={d.booster} variant="accent" className="size-7 text-[11px]" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Panel>
-
+      <div className="mb-6 max-w-xl">
         <Panel title="Add a draw manually">
           <div className="space-y-3">
             <div>

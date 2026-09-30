@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Panel, Ball } from "@/components/AppShell";
 import { runAnalysis, rankPairs } from "@/lib/engine";
-import { aiInsights } from "@/lib/ai.functions";
 import { getAnalysisSnapshot, refreshAnalysisSnapshot } from "@/lib/analysis.functions";
 import {
   SESSIONS,
@@ -20,7 +19,7 @@ import { nextTarget } from "@/lib/sessions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BrainCircuit, Download, RefreshCw, Save } from "lucide-react";
+import { Download, RefreshCw, Save } from "lucide-react";
 
 export const Route = createFileRoute("/analysis")({
   head: () => ({
@@ -29,7 +28,7 @@ export const Route = createFileRoute("/analysis")({
       {
         name: "description",
         content:
-          "Run every active UK49 strategy against your history, rank candidate numbers by overlap and weight, and get AI insights.",
+          "Run every active UK49 strategy against your history, rank candidate numbers by overlap and weight.",
       },
       { property: "og:title", content: "UK49 Analysis Engine" },
       {
@@ -42,7 +41,6 @@ export const Route = createFileRoute("/analysis")({
 });
 
 function AnalysisPage() {
-  const insightsFn = useServerFn(aiInsights);
   const getSnapshotFn = useServerFn(getAnalysisSnapshot);
   const refreshSnapshotFn = useServerFn(refreshAnalysisSnapshot);
   const queryClient = useQueryClient();
@@ -102,37 +100,6 @@ function AnalysisPage() {
   const history = useMemo(() => draws.filter((d) => d.draw_date < date), [draws, date]);
   const pairs = useMemo(() => rankPairs(result.ranked, history), [result, history]);
 
-  const ai = useMutation({
-    mutationFn: async () => {
-      const summary = [
-        `Target draw: ${date} ${SESSION_LABELS[session]}.`,
-        `History depth: ${draws.length} draws.`,
-        `Active strategies: ${active.map((s) => `${s.name} (weight ${s.weight})`).join(", ")}.`,
-        "Top ranked candidates: " +
-          result.ranked
-            .slice(0, 12)
-            .map((r) => `${r.number} score ${r.score.toFixed(1)} from ${r.hits.length} strategies`)
-            .join("; "),
-        "Top ranked pairs: " +
-          pairs
-            .map(
-              (p) =>
-                `${p.pair[0]}+${p.pair[1]} score ${p.score.toFixed(1)}, ${p.sharedStrategies} shared strategies, ${p.coOccurrences} historical co-occurrences`,
-            )
-            .join("; "),
-        "Per-strategy outputs: " +
-          result.perStrategy.map((p) => `${p.strategy.name}: [${p.numbers.join(",")}]`).join(" | "),
-        "Last five draws: " +
-          draws
-            .slice(0, 5)
-            .map((d) => `${d.draw_date} ${d.session} ${drawNumbers(d).join("-")}`)
-            .join(" | "),
-      ].join("\n");
-      return insightsFn({ data: { summary: summary.slice(0, 60000) } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const exportCsv = () => {
     const rows = [
       ["number", "score", "strategy_count", "strategies"],
@@ -189,13 +156,6 @@ function AnalysisPage() {
               <Download className="mr-2 size-4" />
               CSV
             </Button>
-            <Button
-              onClick={() => ai.mutate()}
-              disabled={ai.isPending || result.ranked.length === 0}
-            >
-              <BrainCircuit className="mr-2 size-4" />
-              {ai.isPending ? "Thinking…" : "AI insights"}
-            </Button>
           </div>
         </div>
       </Panel>
@@ -238,8 +198,8 @@ function AnalysisPage() {
         </div>
       </Panel>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Ranked candidates" className="lg:col-span-2">
+      <div className="grid gap-6">
+        <Panel title="Ranked candidates">
           {result.ranked.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No output — import draws and enable at least one strategy.
@@ -263,26 +223,6 @@ function AnalysisPage() {
                 Score = sum of the weights of every strategy that produced the number.
               </p>
             </div>
-          )}
-        </Panel>
-
-        <Panel title="AI insights">
-          {ai.data ? (
-            <div className="space-y-3">
-              <p className="font-display text-sm font-semibold">{ai.data.headline}</p>
-              {ai.data.insights.map((i, k) => (
-                <div key={k} className="rounded-lg border border-border/70 p-3">
-                  <p className="text-xs font-semibold text-primary">{i.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{i.detail}</p>
-                </div>
-              ))}
-              <p className="text-[11px] italic text-muted-foreground">{ai.data.caveat}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Run AI insights to get an explanation of strategy overlap, recurring calculations and
-              historical trends.
-            </p>
           )}
         </Panel>
       </div>
