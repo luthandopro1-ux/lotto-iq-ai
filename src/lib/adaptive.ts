@@ -11,7 +11,7 @@
  */
 import { replayFormula, dateFeatures, type Slot } from "./date-intel";
 import type { StructuredDraw } from "./structure";
-import { SESSION_LABELS, type SessionKey, type Strategy } from "./uk49";
+import { SESSION_LABELS, isDrawBefore, type SessionKey, type Strategy } from "./uk49";
 
 export type Trend = "up" | "flat" | "down";
 
@@ -136,7 +136,13 @@ export function adaptiveLayer(
   target: { date: string; session: SessionKey },
   slotCount = 80,
 ): AdaptiveReport {
-  const slots = replayFormula(strategies, sequence, undefined, slotCount);
+  const priorSequence = sequence.filter((d) =>
+    isDrawBefore(
+      { draw_date: d.date, session: d.session },
+      { draw_date: target.date, session: target.session },
+    ),
+  );
+  const slots = replayFormula(strategies, priorSequence, undefined, slotCount);
   const recentFrom = Math.max(0, slots.length - 12);
   const targetWeekday = dateFeatures(target.date).weekday;
 
@@ -219,7 +225,7 @@ export function adaptiveLayer(
       /* Lag: did the produced number land on this draw, or later? */
       for (const n of e.numbers) {
         for (let lag = 0; lag <= 4; lag++) {
-          const future = sequence[slot.index + lag];
+          const future = priorSequence[slot.index + lag];
           if (!future) break;
           if (future.numbers.includes(n)) {
             a.landed += 1;

@@ -11,6 +11,7 @@ import type { Grading, PickedNumber, PredictionRow } from "@/lib/predict";
 import { SyncLog } from "@/components/SyncLog";
 import { AdaptivePanel } from "@/components/AdaptivePanel";
 import { RefreshCw } from "lucide-react";
+import { ukDate } from "@/lib/sessions";
 
 const STATE_STYLE: Record<string, string> = {
   WAITING: "bg-secondary/60 text-muted-foreground",
@@ -157,7 +158,7 @@ function Chart({ rows, grading }: { rows: PredictionRow[]; grading: Grading | nu
 function PredictionsPage() {
   const run = useServerFn(runDailyBoard);
   const qc = useQueryClient();
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => ukDate());
   const [open, setOpen] = useState<SessionKey | null>(null);
 
   const { data, isLoading } = useQuery({

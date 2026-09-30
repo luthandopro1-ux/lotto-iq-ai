@@ -3,7 +3,12 @@ import { z } from "zod";
 import { adminGuard } from "@/lib/admin-guard";
 
 const drawSchema = z.object({
-  draw_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  draw_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((v) => new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, {
+      message: "Invalid calendar date",
+    }),
   session: z.enum(["brunch", "lunch", "drivetime", "teatime"]),
   numbers: z.array(z.number().int().min(1).max(49)).length(6),
   booster: z.number().int().min(1).max(49).nullable().optional(),
