@@ -6,7 +6,7 @@
  * works in the background (minutes, not milliseconds) and reports back
  * via webhook when it stops. That's the right shape for a weekly
  * background research/comparison job — wrong shape for "parse this CSV
- * and show me the result now" (see ai-gateway.server.ts for that).
+ * and show me the result now".
  */
 
 const BASE = "https://api.manus.ai";

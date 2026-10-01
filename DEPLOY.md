@@ -19,14 +19,13 @@ npx wrangler login          # authenticate this machine with Cloudflare
 
 The build only bakes in the `VITE_*` client vars. The server vars
 (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-`LOVABLE_API_KEY`, `ADMIN_API_KEY`, `SYNC_WEBHOOK_SECRET`) must be set on
+`ADMIN_API_KEY`, `SYNC_WEBHOOK_SECRET`) must be set on
 the Worker itself — Workers don't read `.env` at runtime:
 
 ```bash
 npx wrangler secret put SUPABASE_URL --config .output/server/wrangler.json
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config .output/server/wrangler.json
 npx wrangler secret put SUPABASE_PUBLISHABLE_KEY --config .output/server/wrangler.json
-npx wrangler secret put LOVABLE_API_KEY --config .output/server/wrangler.json   # optional
 npx wrangler secret put ADMIN_API_KEY --config .output/server/wrangler.json    # required in production
 npx wrangler secret put SYNC_WEBHOOK_SECRET --config .output/server/wrangler.json  # required in production
 ```
